@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/go-chi/chi/v5"
 	"io"
 	"math/rand"
 	"net/http"
@@ -13,54 +14,52 @@ var db map[string]string
 
 func main() {
 	db = make(map[string]string)
-	http.HandleFunc("/", URLHandler(db))
-	http.ListenAndServe("localhost:8080", nil)
+	router := chi.NewRouter()
+	router.Route("/", func(r chi.Router) {
+		router.Get("/", MainPage)
+		router.Get("/{key}", GetHandler(db))
+		router.Post("/", PostHandler(db))
+	})
+	http.ListenAndServe("localhost:8080", router)
 }
 
-func URLHandler(storage map[string]string) http.HandlerFunc {
+func GetHandler(storage map[string]string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		switch request.Method {
-		case http.MethodGet:
-			query := request.URL.Path
-			_, query, _ = strings.Cut(query, "/") //Обрезаем хост
-			if query == "" {
-				writer.Write([]byte(form))
-				return
-			}
-			str := storage[query]
-			if str != "" {
-				writer.Header().Set("Location", str)
-				writer.WriteHeader(http.StatusTemporaryRedirect)
-			} else {
-				http.Error(writer, "Not found", http.StatusNotFound)
-			}
+		key := chi.URLParam(request, "key")
+		if storage[key] != "" {
+			writer.Header().Set("Location", storage[key])
+			writer.WriteHeader(http.StatusTemporaryRedirect)
+		} else {
+			http.Error(writer, "Not found", http.StatusNotFound)
+		}
+	}
+}
+
+func PostHandler(storage map[string]string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		var str string
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			http.Error(writer, "Please provide a correct link!", http.StatusBadRequest)
 			return
-		case http.MethodPost:
-			var str string
-			body, err := io.ReadAll(request.Body)
-			if err != nil {
-				http.Error(writer, "Please provide a correct link!", http.StatusBadRequest)
-				return
-			}
-			str = string(body)
-			if strings.Contains(str, "URL=") {
-				_, str, _ = strings.Cut(string(body), "URL=")
-			}
-			str, _ = url.QueryUnescape(str)
-			/*if path, _ := url.ParseRequestURI(str); path == nil {
-				http.Error(writer, "Incorrect link! Make sure it begins with http:// or https://", http.StatusBadRequest)
-				return
-			}*/
-			for { //На случай, если сгенерированная последовательность уже будет занята
-				foundStr := GenerateReducedLink()
-				if storage[foundStr] == "" {
-					storage[foundStr] = str
-					writer.WriteHeader(http.StatusCreated)
-					writer.Write([]byte("http://" + request.Host + "/" + foundStr))
-					break
-				}
-			}
+		}
+		str = string(body)
+		if strings.Contains(str, "URL=") {
+			_, str, _ = strings.Cut(string(body), "URL=")
+		}
+		str, _ = url.QueryUnescape(str)
+		if !ValidateURL(str) {
+			http.Error(writer, "Incorrect URL!", http.StatusBadRequest)
 			return
+		}
+		for { //На случай, если сгенерированная последовательность уже будет занята
+			foundStr := GenerateReducedLink()
+			if storage[foundStr] == "" {
+				storage[foundStr] = str
+				writer.WriteHeader(http.StatusCreated)
+				writer.Write([]byte("http://" + request.Host + "/" + foundStr))
+				break
+			}
 		}
 	}
 }
@@ -75,7 +74,15 @@ func GenerateReducedLink() string {
 	return builder.String()
 }
 
-var form = `<html>
+func ValidateURL(str string) bool {
+	/*if path, _ := url.ParseRequestURI(str); path != nil { //Функция помечает URL вида yandex.com как невалидный
+		return true
+	}*/
+	return strings.ContainsAny(str, ":/.")
+}
+
+func MainPage(writer http.ResponseWriter, request *http.Request) {
+	var form = `<html>
     <head>
     <title></title>
     </head>
@@ -86,3 +93,5 @@ var form = `<html>
         </form>
     </body>
 </html>`
+	writer.Write([]byte(form))
+}

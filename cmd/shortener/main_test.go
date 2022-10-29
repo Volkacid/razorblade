@@ -1,12 +1,26 @@
 package main
 
 import (
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+func testRequest(query, method string, bodyReader io.Reader, db map[string]string) *httptest.ResponseRecorder {
+	router := chi.NewRouter()
+	router.Route("/", func(r chi.Router) {
+		router.Get("/{key}", GetHandler(db))
+		router.Post("/", PostHandler(db))
+	})
+	request := httptest.NewRequest(method, query, bodyReader)
+	writer := httptest.NewRecorder()
+	router.ServeHTTP(writer, request)
+	return writer
+}
 
 func TestURLHandlerPOST(t *testing.T) {
 
@@ -26,11 +40,8 @@ func TestURLHandlerPOST(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			bodyReader := strings.NewReader(tt.query)
-			request := httptest.NewRequest(http.MethodPost, "/", bodyReader)
-			writer := httptest.NewRecorder()
-			handler := http.HandlerFunc(URLHandler(tt.db))
-			handler.ServeHTTP(writer, request)
-			response := writer.Result()
+			recorder := testRequest("/", http.MethodPost, bodyReader, tt.db)
+			response := recorder.Result()
 			defer response.Body.Close()
 			assert.Equal(t, tt.statusCode, response.StatusCode)
 			assert.NotNil(t, response.Body)
@@ -66,11 +77,8 @@ func TestURLHandlerGET(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, tt.query, nil)
-			writer := httptest.NewRecorder()
-			handler := http.HandlerFunc(URLHandler(tt.db))
-			handler.ServeHTTP(writer, request)
-			response := writer.Result()
+			recorder := testRequest(tt.query, http.MethodGet, nil, tt.db)
+			response := recorder.Result()
 			defer response.Body.Close()
 			assert.Equal(t, tt.want, response.Header.Get("Location"))
 			assert.Equal(t, tt.statusCode, response.StatusCode)
@@ -97,19 +105,14 @@ func TestPOSTGET(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			bodyReader := strings.NewReader(tt.query)
-			postRequest := httptest.NewRequest(http.MethodPost, "/", bodyReader)
-			writer := httptest.NewRecorder()
-			handler := http.HandlerFunc(URLHandler(tt.db))
-			handler.ServeHTTP(writer, postRequest)
-			postResponse := writer.Body.String()
-			getRequest := httptest.NewRequest(http.MethodGet, postResponse, nil)
-
-			writer = httptest.NewRecorder()
-			handler.ServeHTTP(writer, getRequest)
-			response := writer.Result()
-			defer response.Body.Close()
-			assert.Equal(t, tt.want, response.Header.Get("Location"))
-			assert.Equal(t, tt.statusCode, response.StatusCode)
+			postRecorder := testRequest("/", http.MethodPost, bodyReader, tt.db)
+			postResponse := postRecorder.Body.String()
+			defer postRecorder.Result().Body.Close()
+			getRecorder := testRequest(postResponse, http.MethodGet, nil, tt.db)
+			getResponse := getRecorder.Result()
+			defer getResponse.Body.Close()
+			assert.Equal(t, tt.want, getResponse.Header.Get("Location"))
+			assert.Equal(t, tt.statusCode, getResponse.StatusCode)
 		})
 	}
 }
