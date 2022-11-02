@@ -7,13 +7,17 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
 var db map[string]string
+var mutex = &sync.RWMutex{}
 
 func main() {
 	db = make(map[string]string)
+	rand.Seed(time.Now().Unix())
+
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
 		router.Get("/", MainPage)
@@ -26,12 +30,14 @@ func main() {
 func GetHandler(storage map[string]string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		key := chi.URLParam(request, "key")
+		mutex.RLock()
 		if storage[key] != "" {
 			writer.Header().Set("Location", storage[key])
 			writer.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
 			http.Error(writer, "Not found", http.StatusNotFound)
 		}
+		mutex.RUnlock()
 	}
 }
 
@@ -39,10 +45,12 @@ func PostHandler(storage map[string]string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		var str string
 		body, err := io.ReadAll(request.Body)
+		defer request.Body.Close()
 		if err != nil {
 			http.Error(writer, "Please provide a correct link!", http.StatusBadRequest)
 			return
 		}
+
 		str = string(body)
 		if strings.Contains(str, "URL=") {
 			_, str, _ = strings.Cut(string(body), "URL=")
@@ -52,6 +60,7 @@ func PostHandler(storage map[string]string) http.HandlerFunc {
 			http.Error(writer, "Incorrect URL!", http.StatusBadRequest)
 			return
 		}
+		mutex.Lock()
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := GenerateReducedLink()
 			if storage[foundStr] == "" {
@@ -61,11 +70,11 @@ func PostHandler(storage map[string]string) http.HandlerFunc {
 				break
 			}
 		}
+		mutex.Unlock()
 	}
 }
 
 func GenerateReducedLink() string {
-	rand.Seed(time.Now().Unix())
 	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "abcdefghijklmnopqrstuvwxyz" + "0123456789")
 	var builder strings.Builder
 	for i := 0; i < 6; i++ {
@@ -75,10 +84,11 @@ func GenerateReducedLink() string {
 }
 
 func ValidateURL(str string) bool {
-	/*if path, _ := url.ParseRequestURI(str); path != nil { //Функция помечает URL вида yandex.com как невалидный
+	path, err := url.ParseRequestURI(str)
+	if err == nil && strings.ContainsAny(path.Host, ".:") {
 		return true
-	}*/
-	return strings.ContainsAny(str, ":/.")
+	}
+	return false
 }
 
 func MainPage(writer http.ResponseWriter, request *http.Request) {
