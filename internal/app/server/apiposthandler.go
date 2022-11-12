@@ -38,8 +38,8 @@ func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
 				storage.SaveValue(foundStr, receivedURL.URL)
 				result := Result{URL: "http://" + request.Host + "/" + foundStr}
 				marshaledResult, _ := json.Marshal(result)
-				writer.WriteHeader(http.StatusCreated)
 				writer.Header().Set("Content-Type", "application/json")
+				writer.WriteHeader(http.StatusCreated)
 				writer.Write(marshaledResult)
 				break
 			}
