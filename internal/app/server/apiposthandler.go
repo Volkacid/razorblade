@@ -41,7 +41,8 @@ func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
 				storage.SaveValue(foundStr, receivedURL.URL)
-				result := Result{URL: servConf.BaseURL + foundStr}
+				resultURL := servConf.BaseURL + foundStr
+				result := Result{URL: resultURL}
 				marshaledResult, _ := json.Marshal(result)
 				writer.Header().Set("Content-Type", "application/json")
 				writer.WriteHeader(http.StatusCreated)

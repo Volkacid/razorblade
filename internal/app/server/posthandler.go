@@ -37,8 +37,9 @@ func PostHandler(storage *storage.Storage) http.HandlerFunc {
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
 				storage.SaveValue(foundStr, str)
+				resultURL := servConf.BaseURL + foundStr
 				writer.WriteHeader(http.StatusCreated)
-				writer.Write([]byte(servConf.BaseURL + foundStr))
+				writer.Write([]byte(resultURL))
 				break
 			}
 		}
