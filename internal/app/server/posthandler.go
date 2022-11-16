@@ -1,8 +1,10 @@
 package server
 
 import (
+	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
+	"github.com/caarlos0/env/v6"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,12 +30,15 @@ func PostHandler(storage *storage.Storage) http.HandlerFunc {
 			http.Error(writer, "Incorrect URL!", http.StatusBadRequest)
 			return
 		}
+		servConf := config.ServerConfig{}
+		env.Parse(&servConf)
+
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
 				storage.SaveValue(foundStr, str)
 				writer.WriteHeader(http.StatusCreated)
-				writer.Write([]byte("http://" + request.Host + "/" + foundStr))
+				writer.Write([]byte(servConf.BaseURL + foundStr))
 				break
 			}
 		}
