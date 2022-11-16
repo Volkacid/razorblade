@@ -5,7 +5,6 @@ import (
 	"github.com/Volkacid/razorblade/internal/app/server"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
-	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
@@ -16,8 +15,7 @@ func main() {
 	db := storage.CreateStorage()
 	service.SetCreatorSeed(time.Now().Unix())
 
-	servConf := config.ServerConfig{}
-	env.Parse(&servConf)
+	servConf := config.GetServerConfig()
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {

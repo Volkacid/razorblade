@@ -5,7 +5,6 @@ import (
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
-	"github.com/caarlos0/env/v6"
 	"io"
 	"net/http"
 )
@@ -34,15 +33,13 @@ func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		servConf := config.ServerConfig{}
-		env.Parse(&servConf)
+		servConf := config.GetServerConfig()
 
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
 				storage.SaveValue(foundStr, receivedURL.URL)
-				resultURL := servConf.BaseURL + foundStr
-				result := Result{URL: resultURL}
+				result := Result{URL: servConf.BaseURL + foundStr}
 				marshaledResult, _ := json.Marshal(result)
 				writer.Header().Set("Content-Type", "application/json")
 				writer.WriteHeader(http.StatusCreated)
