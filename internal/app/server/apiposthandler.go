@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"io"
@@ -33,13 +32,13 @@ func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		servConf := config.GetServerConfig()
+		//servConf := config.GetServerConfig()
 
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
 				storage.SaveValue(foundStr, receivedURL.URL)
-				result := Result{URL: servConf.BaseURL + foundStr}
+				result := Result{URL: "http://" + request.Host + "/" + foundStr}
 				marshaledResult, _ := json.Marshal(result)
 				writer.Header().Set("Content-Type", "application/json")
 				writer.WriteHeader(http.StatusCreated)
