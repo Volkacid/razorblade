@@ -20,7 +20,7 @@ func TestStorageGetValue(t *testing.T) {
 		{
 			name: "Trying to get value that isn't stored",
 			key:  "anothertestkey",
-			err:  errors.New("value does not exist"),
+			err:  errors.New("value not found"),
 		},
 	}
 	db := CreateStorage()
