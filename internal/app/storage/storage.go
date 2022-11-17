@@ -3,7 +3,6 @@ package storage
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"os"
 	"strings"
@@ -29,7 +28,6 @@ func CreateStorage(byFile bool) *Storage {
 }
 
 func (storage *Storage) GetValue(key string) (string, error) {
-	fmt.Println("IS EXIST", storageFileExist)
 	if storageFileExist {
 		db, err := os.OpenFile(storageFilePath, os.O_RDONLY, 0444)
 		defer func(db *os.File) {

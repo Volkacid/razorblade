@@ -24,5 +24,5 @@ func main() {
 		router.Post("/", server.PostHandler(db))
 		router.Post("/api/shorten", server.APIPostHandler(db))
 	})
-	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
+	log.Fatal(http.ListenAndServe("localhost:8080", router))
 }
