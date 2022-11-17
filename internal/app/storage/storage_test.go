@@ -23,7 +23,7 @@ func TestStorageGetValue(t *testing.T) {
 			err:  errors.New("value not found"),
 		},
 	}
-	db := CreateStorage()
+	db := CreateStorage(false)
 	db.SaveValue("testkey", "somevalue")
 
 	for _, tt := range tests {

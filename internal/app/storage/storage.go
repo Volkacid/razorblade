@@ -3,6 +3,7 @@ package storage
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"os"
 	"strings"
@@ -17,14 +18,18 @@ var mutex = &sync.RWMutex{}
 var storageFilePath string
 var storageFileExist bool
 
-func CreateStorage() *Storage {
-	servConf := config.GetServerConfig()
-	storageFilePath = servConf.StorageFile
-	storageFileExist = servConf.StorageFile != ""
-	return &Storage{db: make(map[string]string)}
+func CreateStorage(byFile bool) *Storage {
+	if byFile {
+		storageFilePath = config.GetServerConfig().StorageFile
+		storageFileExist = storageFilePath != ""
+		return &Storage{}
+	} else {
+		return &Storage{db: make(map[string]string)}
+	}
 }
 
 func (storage *Storage) GetValue(key string) (string, error) {
+	fmt.Println("IS EXIST", storageFileExist)
 	if storageFileExist {
 		db, err := os.OpenFile(storageFilePath, os.O_RDONLY, 0444)
 		defer func(db *os.File) {

@@ -12,10 +12,10 @@ import (
 )
 
 func main() {
-	db := storage.CreateStorage()
-	service.SetCreatorSeed(time.Now().Unix())
-
 	servConf := config.GetServerConfig()
+	isStorageFileExist := servConf.StorageFile != ""
+	db := storage.CreateStorage(isStorageFileExist)
+	service.SetCreatorSeed(time.Now().Unix())
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
