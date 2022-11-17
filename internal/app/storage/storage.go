@@ -27,7 +27,12 @@ func CreateStorage() *Storage {
 func (storage *Storage) GetValue(key string) (string, error) {
 	if storageFileExist {
 		db, err := os.OpenFile(storageFilePath, os.O_RDONLY, 0444)
-		defer db.Close()
+		defer func(db *os.File) {
+			err := db.Close()
+			if err != nil {
+				panic(err)
+			}
+		}(db)
 		if err != nil {
 			return "", err
 		}
@@ -56,7 +61,12 @@ func (storage *Storage) GetValue(key string) (string, error) {
 func (storage *Storage) SaveValue(key string, value string) {
 	if storageFileExist {
 		db, err := os.OpenFile(storageFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
-		defer db.Close()
+		defer func(db *os.File) {
+			err := db.Close()
+			if err != nil {
+				panic(err)
+			}
+		}(db)
 		if err != nil {
 			panic(err)
 		}
