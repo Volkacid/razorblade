@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"io"
@@ -29,14 +30,12 @@ func PostHandler(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		//servConf := config.GetServerConfig()
-
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
 				storage.SaveValue(foundStr, str)
 				writer.WriteHeader(http.StatusCreated)
-				writer.Write([]byte("http://" + request.Host + "/" + foundStr))
+				writer.Write([]byte(config.GetServerConfig().BaseURL + "/" + foundStr))
 				break
 			}
 		}

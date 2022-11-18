@@ -29,26 +29,28 @@ func CreateStorage(byFile bool) *Storage {
 
 func (storage *Storage) GetValue(key string) (string, error) {
 	if storageFileExist {
-		db, err := os.OpenFile(storageFilePath, os.O_RDONLY, 0444)
-		defer func(db *os.File) {
-			err := db.Close()
-			if err != nil {
-				panic(err)
-			}
-		}(db)
+		db, err := os.OpenFile(storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
-			return "", err
+			panic(err)
 		}
+		foundValue := ""
 		mutex.RLock()
 		scanner := bufio.NewScanner(db)
 		for scanner.Scan() {
 			if strings.Contains(scanner.Text(), key) {
-				_, foundValue, _ := strings.Cut(scanner.Text(), ":-:")
-				return foundValue, nil
+				_, foundValue, _ = strings.Cut(scanner.Text(), ":-:")
+				break
 			}
 		}
 		mutex.RUnlock()
-		return "", errors.New("value not found")
+		if err = db.Close(); err != nil {
+			panic(err)
+		}
+		if foundValue != "" {
+			return foundValue, nil
+		} else {
+			return "", errors.New("value not found")
+		}
 	} else {
 		mutex.RLock()
 		value, ok := storage.db[key]
@@ -64,18 +66,18 @@ func (storage *Storage) GetValue(key string) (string, error) {
 func (storage *Storage) SaveValue(key string, value string) {
 	if storageFileExist {
 		db, err := os.OpenFile(storageFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
-		defer func(db *os.File) {
-			err := db.Close()
-			if err != nil {
-				panic(err)
-			}
-		}(db)
 		if err != nil {
 			panic(err)
 		}
 		mutex.Lock()
-		db.WriteString(key + ":-:" + value + "\n")
+		_, err = db.WriteString(key + ":-:" + value + "\n")
+		if err != nil {
+			panic(err)
+		}
 		mutex.Unlock()
+		if err = db.Close(); err != nil {
+			panic(err)
+		}
 	} else {
 		mutex.Lock()
 		storage.db[key] = value

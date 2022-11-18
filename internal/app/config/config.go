@@ -1,16 +1,21 @@
 package config
 
-import "github.com/caarlos0/env/v6"
+import (
+	"github.com/caarlos0/env/v6"
+)
 
 type ServerConfig struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseURL       string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
-	StorageFile   string `env:"FILE_STORAGE_PATH"`
+	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
+	BaseURL       string `env:"BASE_URL" envDefault:"http://localhost:8080"`
+	StorageFile   string `env:"FILE_STORAGE_PATH" envDefault:"internal/app/storage/storage.txt"`
 }
 
+var servConf *ServerConfig
+
 func GetServerConfig() *ServerConfig {
-	servConf := &ServerConfig{}
-	env.Parse(servConf)
-	servConf.StorageFile = "internal/app/storage/storage.txt"
+	if servConf == nil {
+		servConf = &ServerConfig{}
+		env.Parse(servConf)
+	}
 	return servConf
 }
