@@ -17,9 +17,9 @@ func GetServerConfig() *ServerConfig {
 	if servConf == nil {
 		servConf = &ServerConfig{}
 		env.Parse(servConf)
-		flag.StringVar(&servConf.ServerAddress, "a", "localhost:8080", "address:port to listen")
-		flag.StringVar(&servConf.BaseURL, "b", "http://localhost:8080", "base url of shortener")
-		flag.StringVar(&servConf.StorageFile, "f", "internal/app/storage/storage.txt", "address of db file")
+		flag.StringVar(&servConf.ServerAddress, "a", servConf.ServerAddress, "address:port to listen")
+		flag.StringVar(&servConf.BaseURL, "b", servConf.BaseURL, "base url of shortener")
+		flag.StringVar(&servConf.StorageFile, "f", servConf.StorageFile, "address of db file")
 		flag.Parse()
 	}
 	return servConf
