@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"github.com/caarlos0/env/v6"
 )
 
@@ -16,6 +17,10 @@ func GetServerConfig() *ServerConfig {
 	if servConf == nil {
 		servConf = &ServerConfig{}
 		env.Parse(servConf)
+		flag.StringVar(&servConf.ServerAddress, "a", "localhost:8080", "address:port to listen")
+		flag.StringVar(&servConf.BaseURL, "b", "http://localhost:8080", "base url of shortener")
+		flag.StringVar(&servConf.StorageFile, "f", "internal/app/storage/storage.txt", "address of db file")
+		flag.Parse()
 	}
 	return servConf
 }
