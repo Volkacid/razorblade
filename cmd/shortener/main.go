@@ -21,12 +21,13 @@ func main() {
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
 		//router.Use(middleware.Compress(5, "gzip"))
+		router.Use(middlewares.GetUserID)
+		router.Use(middlewares.GzipHandle)
 		router.Get("/", server.MainPage)
 		router.Get("/{key}", server.GetHandler(db))
 		router.Get("/api/user/urls", server.APIUrlsHandler(db))
 		router.Post("/", server.PostHandler(db))
 		router.Post("/api/shorten", server.APIPostHandler(db))
 	})
-	//log.Fatal(http.ListenAndServe(servConf.ServerAddress, middlewares.GzipHandle(router)))
-	log.Fatal(http.ListenAndServe(servConf.ServerAddress, middlewares.GetUserID(middlewares.GzipHandle(router))))
+	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
 }

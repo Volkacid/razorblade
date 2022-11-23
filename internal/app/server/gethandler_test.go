@@ -28,7 +28,7 @@ func TestGetHandler(t *testing.T) {
 		},
 	}
 	db := storage.CreateStorage(false)
-	db.SaveValue("testlink", "https://yandex.com")
+	db.SaveValue("testlink", "https://yandex.com", "someid")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

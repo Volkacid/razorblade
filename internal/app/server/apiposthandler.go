@@ -33,12 +33,13 @@ func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		userID, _ := request.Cookie("UserID")
+		ctx := request.Context()
+		userID := ctx.Value("UserID").(string)
 
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
-				storage.SaveValue(foundStr, receivedURL.URL, userID.Value)
+				storage.SaveValue(foundStr, receivedURL.URL, userID)
 				result := Result{URL: config.GetServerConfig().BaseURL + "/" + foundStr}
 				marshaledResult, _ := json.Marshal(result)
 				writer.Header().Set("Content-Type", "application/json")

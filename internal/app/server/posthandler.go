@@ -30,12 +30,13 @@ func PostHandler(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		userID, _ := request.Cookie("UserID")
+		ctx := request.Context()
+		userID := ctx.Value("UserID").(string)
 
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := service.GenerateShortString()
 			if _, err := storage.GetValue(foundStr); err != nil {
-				storage.SaveValue(foundStr, str, userID.Value)
+				storage.SaveValue(foundStr, str, userID)
 				writer.WriteHeader(http.StatusCreated)
 				writer.Write([]byte(config.GetServerConfig().BaseURL + "/" + foundStr))
 				break

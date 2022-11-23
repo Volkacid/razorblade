@@ -15,8 +15,9 @@ type Response struct {
 
 func APIUrlsHandler(storage *storage.Storage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		userID, _ := request.Cookie("UserID")
-		values, err := storage.GetValuesByID(userID.Value)
+		ctx := request.Context()
+		userID := ctx.Value("UserID").(string)
+		values, err := storage.GetValuesByID(userID)
 		if err != nil {
 			writer.WriteHeader(http.StatusNoContent)
 			return

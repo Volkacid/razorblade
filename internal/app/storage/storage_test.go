@@ -24,7 +24,7 @@ func TestStorageGetValue(t *testing.T) {
 		},
 	}
 	db := CreateStorage(false)
-	db.SaveValue("testkey", "somevalue")
+	db.SaveValue("testkey", "somevalue", "someid")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
