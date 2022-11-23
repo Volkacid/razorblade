@@ -3,10 +3,10 @@ package main
 import (
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/server"
+	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 	"time"
@@ -20,11 +20,13 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
-		router.Use(middleware.Compress(5, "gzip"))
+		//router.Use(middleware.Compress(5, "gzip"))
 		router.Get("/", server.MainPage)
 		router.Get("/{key}", server.GetHandler(db))
+		router.Get("/api/user/urls", server.APIUrlsHandler(db))
 		router.Post("/", server.PostHandler(db))
 		router.Post("/api/shorten", server.APIPostHandler(db))
 	})
-	log.Fatal(http.ListenAndServe(servConf.ServerAddress, server.GzipHandle(router)))
+	//log.Fatal(http.ListenAndServe(servConf.ServerAddress, middlewares.GzipHandle(router)))
+	log.Fatal(http.ListenAndServe(servConf.ServerAddress, middlewares.GetUserID(middlewares.GzipHandle(router))))
 }

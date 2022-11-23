@@ -39,6 +39,7 @@ func (storage *Storage) GetValue(key string) (string, error) {
 		for scanner.Scan() {
 			if strings.Contains(scanner.Text(), key) {
 				_, foundValue, _ = strings.Cut(scanner.Text(), ":-:")
+				foundValue, _, _ = strings.Cut(foundValue, ":_:")
 				break
 			}
 		}
@@ -63,14 +64,43 @@ func (storage *Storage) GetValue(key string) (string, error) {
 	}
 }
 
-func (storage *Storage) SaveValue(key string, value string) {
+func (storage *Storage) GetValuesByID(userID string) ([]string, error) {
+	if storageFileExist {
+		db, err := os.OpenFile(storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			panic(err)
+		}
+		var foundValues []string
+		mutex.RLock()
+		scanner := bufio.NewScanner(db)
+		for scanner.Scan() {
+			if strings.Contains(scanner.Text(), userID) {
+				value, _, _ := strings.Cut(scanner.Text(), ":_:")
+				foundValues = append(foundValues, value)
+			}
+		}
+		mutex.RUnlock()
+		if err = db.Close(); err != nil {
+			panic(err)
+		}
+		if foundValues != nil {
+			return foundValues, nil
+		} else {
+			return nil, errors.New("values not found")
+		}
+	} else {
+		return nil, errors.New("unable to open database")
+	}
+}
+
+func (storage *Storage) SaveValue(key string, value string, userID string) {
 	if storageFileExist {
 		db, err := os.OpenFile(storageFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 		if err != nil {
 			panic(err)
 		}
 		mutex.Lock()
-		_, err = db.WriteString(key + ":-:" + value + "\n")
+		_, err = db.WriteString(key + ":-:" + value + ":_:" + userID + "\n")
 		if err != nil {
 			panic(err)
 		}
