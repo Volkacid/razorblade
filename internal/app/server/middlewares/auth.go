@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"net/http"
-	"strings"
 )
 
 var secretKey = []byte("practicum")
@@ -15,7 +14,7 @@ var secretKey = []byte("practicum")
 func GetUserID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		userIP := request.RemoteAddr
-		userIP, _, _ = strings.Cut(userIP, ":")
+		//userIP, _, _ = strings.Cut(userIP, ":")
 		sign := createSign(userIP)
 		userID, err := request.Cookie("UserID")
 		if err != nil {
