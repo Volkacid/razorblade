@@ -34,7 +34,8 @@ func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
 		}
 
 		ctx := request.Context()
-		userID := ctx.Value("UserID").(string)
+		//userID := ctx.Value("UserID").(string)
+		userID := ctx.Value(service.UserID{}).(string)
 
 		for { //На случай, если сгенерированная последовательность уже будет занята
 			foundStr := service.GenerateShortString()

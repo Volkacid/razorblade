@@ -20,7 +20,6 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
-		//router.Use(middleware.Compress(5, "gzip"))
 		router.Use(middlewares.GetUserID)
 		router.Use(middlewares.GzipHandle)
 		router.Get("/", server.MainPage)

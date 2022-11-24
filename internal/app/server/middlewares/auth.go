@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/Volkacid/razorblade/internal/app/service"
 	"net/http"
 	"strings"
 )
@@ -22,7 +23,7 @@ func GetUserID(next http.Handler) http.Handler {
 		} else if !hmac.Equal(sign, []byte(userID.Value)) {
 			http.SetCookie(writer, createCookie(sign))
 		}
-		ctx := context.WithValue(request.Context(), "UserID", hex.EncodeToString(sign))
+		ctx := context.WithValue(request.Context(), service.UserID{}, hex.EncodeToString(sign))
 		next.ServeHTTP(writer, request.WithContext(ctx))
 	})
 
