@@ -13,6 +13,11 @@ type Storage struct {
 	db map[string]string
 }
 
+type UserURLs struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
 var mutex = &sync.RWMutex{}
 var storageFilePath string
 var storageFileExist bool
@@ -64,19 +69,20 @@ func (storage *Storage) GetValue(key string) (string, error) {
 	}
 }
 
-func (storage *Storage) GetValuesByID(userID string) ([]string, error) {
+func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 	if storageFileExist {
 		db, err := os.OpenFile(storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			panic(err)
 		}
-		var foundValues []string
+		var foundValues []UserURLs
 		mutex.RLock()
 		scanner := bufio.NewScanner(db)
 		for scanner.Scan() {
 			if strings.Contains(scanner.Text(), userID) {
 				value, _, _ := strings.Cut(scanner.Text(), ":_:")
-				foundValues = append(foundValues, value)
+				short, original, _ := strings.Cut(value, ":-:")
+				foundValues = append(foundValues, UserURLs{ShortURL: config.GetServerConfig().BaseURL + "/" + short, OriginalURL: original})
 			}
 		}
 		mutex.RUnlock()
