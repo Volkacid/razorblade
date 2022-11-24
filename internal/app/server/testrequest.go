@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
-	"github.com/Volkacid/razorblade/internal/app/storage"
+	"github.com/Volkacid/razortest/internal/app/server/middlewares"
+	"github.com/Volkacid/razortest/internal/app/storage"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http/httptest"

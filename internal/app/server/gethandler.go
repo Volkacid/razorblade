@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/Volkacid/razorblade/internal/app/storage"
+	"github.com/Volkacid/razortest/internal/app/storage"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )

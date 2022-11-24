@@ -5,7 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/Volkacid/razorblade/internal/app/service"
+	"github.com/Volkacid/razortest/internal/app/service"
 	"net/http"
 )
 

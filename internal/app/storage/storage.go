@@ -3,7 +3,7 @@ package storage
 import (
 	"bufio"
 	"errors"
-	"github.com/Volkacid/razorblade/internal/app/config"
+	"github.com/Volkacid/razortest/internal/app/config"
 	"os"
 	"strings"
 	"sync"

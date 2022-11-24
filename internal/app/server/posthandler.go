@@ -1,9 +1,9 @@
 package server
 
 import (
-	"github.com/Volkacid/razorblade/internal/app/config"
-	"github.com/Volkacid/razorblade/internal/app/service"
-	"github.com/Volkacid/razorblade/internal/app/storage"
+	"github.com/Volkacid/razortest/internal/app/config"
+	"github.com/Volkacid/razortest/internal/app/service"
+	"github.com/Volkacid/razortest/internal/app/storage"
 	"io"
 	"net/http"
 	"net/url"

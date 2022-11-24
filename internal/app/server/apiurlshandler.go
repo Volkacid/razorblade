@@ -2,9 +2,10 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/Volkacid/razorblade/internal/app/config"
-	"github.com/Volkacid/razorblade/internal/app/service"
-	"github.com/Volkacid/razorblade/internal/app/storage"
+	"fmt"
+	"github.com/Volkacid/razortest/internal/app/config"
+	"github.com/Volkacid/razortest/internal/app/service"
+	"github.com/Volkacid/razortest/internal/app/storage"
 	"net/http"
 	"strings"
 )
@@ -26,6 +27,7 @@ func APIUrlsHandler(storage *storage.Storage) http.HandlerFunc {
 		}
 		writer.Header().Set("Content-Type", "application/json")
 		for _, elem := range values {
+			fmt.Println("FOUND: ", elem)
 			shortURL, originalURL, _ := strings.Cut(elem, ":-:")
 			shortURL = config.GetServerConfig().BaseURL + "/" + shortURL
 			response := Response{OriginalURL: originalURL, ShortURL: shortURL}

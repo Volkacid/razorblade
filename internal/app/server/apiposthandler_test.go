@@ -3,7 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/Volkacid/razorblade/internal/app/storage"
+	"github.com/Volkacid/razortest/internal/app/storage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
