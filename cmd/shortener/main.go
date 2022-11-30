@@ -24,6 +24,7 @@ func main() {
 		router.Use(middlewares.GzipHandle)
 		router.Get("/", server.MainPage)
 		router.Get("/{key}", server.GetHandler(db))
+		router.Get("/ping", server.PingDB())
 		router.Get("/api/user/urls", server.APIUrlsHandler(db))
 		router.Post("/", server.PostHandler(db))
 		router.Post("/api/shorten", server.APIPostHandler(db))
