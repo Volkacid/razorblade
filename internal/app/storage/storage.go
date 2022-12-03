@@ -2,16 +2,31 @@ package storage
 
 import (
 	"bufio"
+	"context"
 	"errors"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
+	"github.com/Volkacid/razorblade/internal/app/service"
+	"github.com/jackc/pgx/v5"
 	"os"
 	"strings"
 	"sync"
 )
 
 type Storage struct {
-	db map[string]string
+	connType        StorageType
+	dbConn          pgx.Conn
+	storageFilePath string
+	dbMap           map[string]string
 }
+
+type StorageType int
+
+const (
+	ByDB = iota
+	ByFile
+	byMap
+)
 
 type UserURLs struct {
 	ShortURL    string `json:"short_url"`
@@ -19,22 +34,35 @@ type UserURLs struct {
 }
 
 var mutex = &sync.RWMutex{}
-var storageFilePath string
-var storageFileExist bool
 
-func CreateStorage(byFile bool) *Storage {
-	if byFile {
-		storageFilePath = config.GetServerConfig().StorageFile
-		storageFileExist = storageFilePath != ""
-		return &Storage{}
-	} else {
-		return &Storage{db: make(map[string]string)}
+func CreateStorage(dbConn pgx.Conn) *Storage {
+	servConf := config.GetServerConfig()
+	if !dbConn.IsClosed() {
+		err := service.InitializeDB(dbConn)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Storage created in DB")
+		return &Storage{connType: ByDB, dbConn: dbConn}
 	}
+	if servConf.StorageFile != "" {
+		fmt.Println("Storage created in file")
+		return &Storage{connType: ByFile, storageFilePath: servConf.StorageFile}
+	}
+	fmt.Println("Storage created in map")
+	return &Storage{connType: byMap, dbMap: make(map[string]string)}
 }
 
 func (storage *Storage) GetValue(key string) (string, error) {
-	if storageFileExist {
-		db, err := os.OpenFile(storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
+	switch storage.connType {
+	case ByDB:
+		var value string
+		mutex.RLock()
+		err := storage.dbConn.QueryRow(context.Background(), `SELECT original FROM urls WHERE short=$1`, key).Scan(&value)
+		mutex.RUnlock()
+		return value, err
+	case ByFile:
+		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -57,9 +85,9 @@ func (storage *Storage) GetValue(key string) (string, error) {
 		} else {
 			return "", errors.New("value not found")
 		}
-	} else {
+	case byMap:
 		mutex.RLock()
-		value, ok := storage.db[key]
+		value, ok := storage.dbMap[key]
 		mutex.RUnlock()
 		if !ok {
 			return "", errors.New("value not found")
@@ -67,11 +95,13 @@ func (storage *Storage) GetValue(key string) (string, error) {
 			return value, nil
 		}
 	}
+	return "", nil
 }
 
 func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
-	if storageFileExist {
-		db, err := os.OpenFile(storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
+	switch storage.connType {
+	case ByFile:
+		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -94,14 +124,24 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 		} else {
 			return nil, errors.New("values not found")
 		}
-	} else {
+	case byMap:
 		return nil, errors.New("unable to open database")
 	}
+	return nil, nil
 }
 
 func (storage *Storage) SaveValue(key string, value string, userID string) {
-	if storageFileExist {
-		db, err := os.OpenFile(storageFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
+	switch storage.connType {
+	case ByDB:
+		mutex.Lock()
+		_, err := storage.dbConn.Exec(context.Background(), `INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)`, key, value, userID)
+		mutex.Unlock()
+		if err != nil {
+			panic(err)
+		}
+		return
+	case ByFile:
+		db, err := os.OpenFile(storage.storageFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -114,9 +154,11 @@ func (storage *Storage) SaveValue(key string, value string, userID string) {
 		if err = db.Close(); err != nil {
 			panic(err)
 		}
-	} else {
+		return
+	case byMap:
 		mutex.Lock()
-		storage.db[key] = value
+		storage.dbMap[key] = value
 		mutex.Unlock()
+		return
 	}
 }

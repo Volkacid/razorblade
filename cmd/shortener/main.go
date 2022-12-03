@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/server"
 	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
 	"time"
@@ -14,8 +16,13 @@ import (
 
 func main() {
 	servConf := config.GetServerConfig()
-	isStorageFileExist := servConf.StorageFile != ""
-	db := storage.CreateStorage(isStorageFileExist)
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	dbConn, err := pgx.Connect(ctx, servConf.DBAddress)
+	if err == nil {
+		defer dbConn.Close(ctx)
+	}
+	db := storage.CreateStorage(*dbConn)
+
 	service.SetCreatorSeed(time.Now().Unix())
 
 	router := chi.NewRouter()
@@ -29,5 +36,5 @@ func main() {
 		router.Post("/", server.PostHandler(db))
 		router.Post("/api/shorten", server.APIPostHandler(db))
 	})
-	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
+	log.Fatal(http.ListenAndServe(config.GetServerConfig().ServerAddress, router))
 }
