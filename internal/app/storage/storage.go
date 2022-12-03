@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Storage struct {
@@ -35,21 +36,28 @@ type UserURLs struct {
 
 var mutex = &sync.RWMutex{}
 
-func CreateStorage(dbConn pgx.Conn) *Storage {
+func CreateStorage() *Storage {
 	servConf := config.GetServerConfig()
-	if !dbConn.IsClosed() {
-		err := service.InitializeDB(dbConn)
+	if service.CheckDBConnection() {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		dbConn, err := pgx.Connect(ctx, servConf.DBAddress)
+		err = service.InitializeDB(*dbConn)
 		if err != nil {
 			panic(err)
 		}
 		fmt.Println("Storage created in DB")
-		return &Storage{connType: ByDB, dbConn: dbConn}
+		return &Storage{connType: ByDB, dbConn: *dbConn}
 	}
 	if servConf.StorageFile != "" {
 		fmt.Println("Storage created in file")
 		return &Storage{connType: ByFile, storageFilePath: servConf.StorageFile}
 	}
 	fmt.Println("Storage created in map")
+	return &Storage{connType: byMap, dbMap: make(map[string]string)}
+}
+
+func CreateTestStorage() *Storage {
 	return &Storage{connType: byMap, dbMap: make(map[string]string)}
 }
 
@@ -99,13 +107,31 @@ func (storage *Storage) GetValue(key string) (string, error) {
 }
 
 func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
+	var foundValues []UserURLs
+
 	switch storage.connType {
+	case ByDB:
+		mutex.RLock()
+		rows, err := storage.dbConn.Query(context.Background(), `SELECT short, original FROM urls WHERE userid=$1`, userID)
+		for rows.Next() {
+			var rowValue UserURLs
+			err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL)
+			if err != nil {
+				return nil, err
+			}
+			foundValues = append(foundValues, rowValue)
+		}
+		mutex.RUnlock()
+		if err != nil {
+			return nil, err
+		} else {
+			return foundValues, nil
+		}
 	case ByFile:
 		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
 			panic(err)
 		}
-		var foundValues []UserURLs
 		mutex.RLock()
 		scanner := bufio.NewScanner(db)
 		for scanner.Scan() {

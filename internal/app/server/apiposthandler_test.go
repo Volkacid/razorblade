@@ -26,7 +26,7 @@ func TestAPIPostHandler(t *testing.T) {
 			statusCode: 400,
 		},
 	}
-	db := storage.CreateStorage(false)
+	db := storage.CreateTestStorage()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

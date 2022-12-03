@@ -27,7 +27,7 @@ func TestGetHandler(t *testing.T) {
 			statusCode: 404,
 		},
 	}
-	db := storage.CreateStorage(false)
+	db := storage.CreateTestStorage()
 	db.SaveValue("testlink", "https://yandex.com", "someid")
 
 	for _, tt := range tests {
