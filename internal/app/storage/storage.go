@@ -42,7 +42,7 @@ func CreateStorage() *Storage {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		dbConn, err := pgx.Connect(ctx, servConf.DBAddress)
-		err = service.InitializeDB(*dbConn)
+		err = service.InitializeDB(dbConn)
 		if err != nil {
 			panic(err)
 		}

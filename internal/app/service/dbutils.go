@@ -18,7 +18,7 @@ func CheckDBConnection() bool {
 	return err == nil
 }
 
-func InitializeDB(dbConn pgx.Conn) error {
+func InitializeDB(dbConn *pgx.Conn) error {
 	_, err := dbConn.Exec(context.Background(), `CREATE TABLE IF NOT EXISTS urls (short varchar(30), original varchar(300), userid varchar(100), PRIMARY KEY (short))`)
 	if err != nil {
 		return err
