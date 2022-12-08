@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"encoding/json"
@@ -42,7 +42,6 @@ func BatchHandler(storage *storage.Storage) http.HandlerFunc {
 
 		for _, q := range query {
 			foundStr := service.GenerateShortString(storage)
-			//storage.SaveValue(foundStr, q.OriginalURL, userID)
 			batchValues[foundStr] = q.OriginalURL
 			response = append(response, BatchResponse{CorrelationID: q.CorrelationID, ShortURL: config.GetServerConfig().BaseURL + "/" + foundStr})
 		}
