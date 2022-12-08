@@ -20,3 +20,5 @@ JWxJzJ:-:https://google.com:_:bb769a3a782f554a382967af7739332740efec8bf8df317f2f
 X3UXiY:-:https://yandex.ru:_:b78d6e081bfaf203f7b82fcc8760ef7b79fe9e576da278570a2d2695b26e13c6
 HH6FPj:-:https://google.com:_:b78d6e081bfaf203f7b82fcc8760ef7b79fe9e576da278570a2d2695b26e13c6
 OT79MV:-:https://microsoft.com:_:b78d6e081bfaf203f7b82fcc8760ef7b79fe9e576da278570a2d2695b26e13c6
+q6D4FS:-:https://yandex.by:_:38aa7f27381aa2ffda495054370cf001a820aa1d14a029eca66a465f51919424
+P07apm:-:https://yandex.by:_:824e6ae39e12d323326088061d794c59104c2ba93c0c8cf0370b2c3142a89fcc

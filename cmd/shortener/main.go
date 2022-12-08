@@ -1,19 +1,26 @@
 package main
 
 import (
+	"context"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/server"
 	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
 	"time"
 )
 
 func main() {
-	db := storage.CreateStorage()
+	servConf := config.GetServerConfig()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	pgPool, _ := pgxpool.New(ctx, servConf.DBAddress)
+	db := storage.CreateStorage(*pgPool)
+	defer pgPool.Close()
 
 	service.SetCreatorSeed(time.Now().Unix())
 
@@ -29,5 +36,5 @@ func main() {
 		router.Post("/api/shorten", server.PostAPIHandler(db))
 		router.Post("/api/shorten/batch", server.BatchHandler(db))
 	})
-	log.Fatal(http.ListenAndServe(config.GetServerConfig().ServerAddress, router))
+	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
 }

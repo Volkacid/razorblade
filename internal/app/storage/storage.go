@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
 	"strings"
 	"sync"
@@ -15,7 +16,7 @@ import (
 
 type Storage struct {
 	connType        int
-	dbConn          pgx.Conn
+	dbPool          pgxpool.Pool
 	storageFilePath string
 	dbMap           map[string]string
 }
@@ -33,26 +34,24 @@ type UserURLs struct {
 
 var mutex = &sync.RWMutex{}
 
-func CreateStorage() *Storage {
+func CreateStorage(pgPool pgxpool.Pool) *Storage {
 	servConf := config.GetServerConfig()
 	if CheckDBConnection() {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		dbConn, err := pgx.Connect(ctx, servConf.DBAddress)
-		if err != nil {
-			panic(err)
-		}
-		err = InitializeDB(dbConn)
+		err := InitializeDB(pgPool, ctx)
 		if err != nil {
 			panic(err)
 		}
 		fmt.Println("Storage created in DB")
-		return &Storage{connType: ByDB, dbConn: *dbConn}
+		return &Storage{connType: ByDB, dbPool: pgPool}
 	}
+
 	if servConf.StorageFile != "" {
 		fmt.Println("Storage created in file")
 		return &Storage{connType: ByFile, storageFilePath: servConf.StorageFile}
 	}
+
 	fmt.Println("Storage created in map")
 	return &Storage{connType: byMap, dbMap: make(map[string]string)}
 }
@@ -64,8 +63,13 @@ func CreateTestStorage() *Storage {
 func (storage *Storage) GetValue(key string) (string, error) {
 	switch storage.connType {
 	case ByDB:
+		dbConn, err := storage.dbPool.Acquire(context.Background())
+		defer dbConn.Release()
+		if err != nil {
+			return "", err
+		}
 		var value string
-		err := storage.dbConn.QueryRow(context.Background(), `SELECT original FROM urls WHERE short=$1`, key).Scan(&value)
+		err = dbConn.QueryRow(context.Background(), "SELECT original FROM urls WHERE short=$1", key).Scan(&value)
 		return value, err
 	case ByFile:
 		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
@@ -109,7 +113,12 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 
 	switch storage.connType {
 	case ByDB:
-		rows, err := storage.dbConn.Query(context.Background(), "SELECT short, original FROM urls WHERE userid=$1", userID)
+		dbConn, err := storage.dbPool.Acquire(context.Background())
+		defer dbConn.Release()
+		if err != nil {
+			return nil, err
+		}
+		rows, err := dbConn.Query(context.Background(), "SELECT short, original FROM urls WHERE userid=$1", userID)
 		for rows.Next() {
 			var rowValue UserURLs
 			err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL)
@@ -155,7 +164,12 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 func (storage *Storage) SaveValue(key string, value string, userID string) {
 	switch storage.connType {
 	case ByDB:
-		_, err := storage.dbConn.Exec(context.Background(), "INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", key, value, userID)
+		dbConn, err := storage.dbPool.Acquire(context.Background())
+		defer dbConn.Release()
+		if err != nil {
+			panic(err)
+		}
+		_, err = dbConn.Exec(context.Background(), "INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", key, value, userID)
 		if err != nil {
 			panic(err)
 		}
@@ -194,7 +208,12 @@ func (storage *Storage) BatchSave(values map[string]string, userID string) error
 	for k, v := range values {
 		batch.Queue("INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", k, v, userID)
 	}
-	bs := storage.dbConn.SendBatch(context.Background(), batch)
-	_, err := bs.Exec()
+	dbConn, err := storage.dbPool.Acquire(context.Background())
+	defer dbConn.Release()
+	if err != nil {
+		return err
+	}
+	bs := dbConn.SendBatch(context.Background(), batch)
+	_, err = bs.Exec()
 	return err
 }
