@@ -19,7 +19,7 @@ func CheckDBConnection() bool {
 	return err == nil
 }
 
-func InitializeDB(dbPool pgxpool.Pool, ctx context.Context) error {
+func InitializeDB(dbPool *pgxpool.Pool, ctx context.Context) error {
 	dbConn, err := dbPool.Acquire(ctx)
 	defer dbConn.Release()
 	if err != nil {

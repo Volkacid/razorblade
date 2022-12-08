@@ -19,7 +19,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	pgPool, _ := pgxpool.New(ctx, servConf.DBAddress)
-	db := storage.CreateStorage(*pgPool)
+	db := storage.CreateStorage(pgPool)
 	defer pgPool.Close()
 
 	service.SetCreatorSeed(time.Now().Unix())

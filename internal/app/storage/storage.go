@@ -16,7 +16,7 @@ import (
 
 type Storage struct {
 	connType        int
-	dbPool          pgxpool.Pool
+	dbPool          *pgxpool.Pool
 	storageFilePath string
 	dbMap           map[string]string
 }
@@ -34,7 +34,7 @@ type UserURLs struct {
 
 var mutex = &sync.RWMutex{}
 
-func CreateStorage(pgPool pgxpool.Pool) *Storage {
+func CreateStorage(pgPool *pgxpool.Pool) *Storage {
 	servConf := config.GetServerConfig()
 	if CheckDBConnection() {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
