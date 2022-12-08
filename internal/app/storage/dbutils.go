@@ -1,4 +1,4 @@
-package service
+package storage
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func CheckDBConnection() bool {
 }
 
 func InitializeDB(dbConn *pgx.Conn) error {
-	_, err := dbConn.Exec(context.Background(), `CREATE TABLE IF NOT EXISTS urls (short varchar(30), original varchar(300), userid varchar(100), PRIMARY KEY (short))`)
+	_, err := dbConn.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS urls (short varchar(30), original varchar(300), userid varchar(100), PRIMARY KEY (short))")
 	if err != nil {
 		return err
 	}

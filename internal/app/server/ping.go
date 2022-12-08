@@ -1,13 +1,13 @@
 package server
 
 import (
-	"github.com/Volkacid/razorblade/internal/app/service"
+	"github.com/Volkacid/razorblade/internal/app/storage"
 	"net/http"
 )
 
 func PingDB() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		if !service.CheckDBConnection() {
+		if !storage.CheckDBConnection() {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}

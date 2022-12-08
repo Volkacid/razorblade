@@ -1,16 +1,16 @@
-package server
+package api
 
 import (
 	"encoding/json"
-	"github.com/Volkacid/razorblade/internal/app/service"
+	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"net/http"
 )
 
-func APIUrlsHandler(storage *storage.Storage) http.HandlerFunc {
+func UrlsAPIHandler(storage *storage.Storage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		ctx := request.Context()
-		userID := ctx.Value(service.UserID{}).(string)
+		userID := ctx.Value(config.UserID{}).(string)
 
 		values, err := storage.GetValuesByID(userID)
 		if err != nil {
@@ -22,4 +22,3 @@ func APIUrlsHandler(storage *storage.Storage) http.HandlerFunc {
 		writer.Write(marshalledResponse)
 	}
 }
-

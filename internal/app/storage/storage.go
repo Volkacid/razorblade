@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
-	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/jackc/pgx/v5"
 	"os"
 	"strings"
@@ -15,13 +14,11 @@ import (
 )
 
 type Storage struct {
-	connType        StorageType
+	connType        int
 	dbConn          pgx.Conn
 	storageFilePath string
 	dbMap           map[string]string
 }
-
-type StorageType int
 
 const (
 	ByDB = iota
@@ -38,14 +35,14 @@ var mutex = &sync.RWMutex{}
 
 func CreateStorage() *Storage {
 	servConf := config.GetServerConfig()
-	if service.CheckDBConnection() {
+	if CheckDBConnection() {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		dbConn, err := pgx.Connect(ctx, servConf.DBAddress)
 		if err != nil {
 			panic(err)
 		}
-		err = service.InitializeDB(dbConn)
+		err = InitializeDB(dbConn)
 		if err != nil {
 			panic(err)
 		}
@@ -68,9 +65,7 @@ func (storage *Storage) GetValue(key string) (string, error) {
 	switch storage.connType {
 	case ByDB:
 		var value string
-		mutex.RLock()
 		err := storage.dbConn.QueryRow(context.Background(), `SELECT original FROM urls WHERE short=$1`, key).Scan(&value)
-		mutex.RUnlock()
 		return value, err
 	case ByFile:
 		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
@@ -114,8 +109,7 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 
 	switch storage.connType {
 	case ByDB:
-		mutex.RLock()
-		rows, err := storage.dbConn.Query(context.Background(), `SELECT short, original FROM urls WHERE userid=$1`, userID)
+		rows, err := storage.dbConn.Query(context.Background(), "SELECT short, original FROM urls WHERE userid=$1", userID)
 		for rows.Next() {
 			var rowValue UserURLs
 			err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL)
@@ -124,7 +118,6 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 			}
 			foundValues = append(foundValues, rowValue)
 		}
-		mutex.RUnlock()
 		if err != nil {
 			return nil, err
 		} else {
@@ -162,9 +155,7 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 func (storage *Storage) SaveValue(key string, value string, userID string) {
 	switch storage.connType {
 	case ByDB:
-		mutex.Lock()
-		_, err := storage.dbConn.Exec(context.Background(), `INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)`, key, value, userID)
-		mutex.Unlock()
+		_, err := storage.dbConn.Exec(context.Background(), "INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", key, value, userID)
 		if err != nil {
 			panic(err)
 		}
@@ -190,4 +181,20 @@ func (storage *Storage) SaveValue(key string, value string, userID string) {
 		mutex.Unlock()
 		return
 	}
+}
+
+func (storage *Storage) BatchSave(values map[string]string, userID string) error {
+	if storage.connType != ByDB {
+		for k, v := range values {
+			storage.SaveValue(k, v, userID)
+		}
+		return nil
+	}
+	batch := &pgx.Batch{}
+	for k, v := range values {
+		batch.Queue("INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", k, v, userID)
+	}
+	bs := storage.dbConn.SendBatch(context.Background(), batch)
+	_, err := bs.Exec()
+	return err
 }

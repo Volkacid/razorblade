@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/Volkacid/razorblade/internal/app/server/api"
 	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
@@ -15,9 +16,9 @@ func TestRequest(query, method string, bodyReader io.Reader, db *storage.Storage
 		router.Use(middlewares.GzipHandle)
 		router.Get("/", MainPage)
 		router.Get("/{key}", GetHandler(db))
-		router.Get("/api/user/urls", APIUrlsHandler(db))
+		router.Get("/api/user/urls", api.UrlsAPIHandler(db))
 		router.Post("/", PostHandler(db))
-		router.Post("/api/shorten", APIPostHandler(db))
+		router.Post("/api/shorten", api.PostAPIHandler(db))
 	})
 	request := httptest.NewRequest(method, query, bodyReader)
 	writer := httptest.NewRecorder()

@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type Result struct {
 	URL string `json:"result"`
 }
 
-func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
+func PostAPIHandler(storage *storage.Storage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		body, err := io.ReadAll(request.Body)
 		defer request.Body.Close()
@@ -34,19 +34,14 @@ func APIPostHandler(storage *storage.Storage) http.HandlerFunc {
 		}
 
 		ctx := request.Context()
-		userID := ctx.Value(service.UserID{}).(string)
+		userID := ctx.Value(config.UserID{}).(string)
 
-		for { //На случай, если сгенерированная последовательность уже будет занята
-			foundStr := service.GenerateShortString()
-			if _, err := storage.GetValue(foundStr); err != nil {
-				storage.SaveValue(foundStr, receivedURL.URL, userID)
-				result := Result{URL: config.GetServerConfig().BaseURL + "/" + foundStr}
-				marshaledResult, _ := json.Marshal(result)
-				writer.Header().Set("Content-Type", "application/json")
-				writer.WriteHeader(http.StatusCreated)
-				writer.Write(marshaledResult)
-				break
-			}
-		}
+		foundStr := service.GenerateShortString(storage)
+		storage.SaveValue(foundStr, receivedURL.URL, userID)
+		result := Result{URL: config.GetServerConfig().BaseURL + "/" + foundStr}
+		marshaledResult, _ := json.Marshal(result)
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusCreated)
+		writer.Write(marshaledResult)
 	}
 }

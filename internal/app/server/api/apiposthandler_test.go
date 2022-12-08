@@ -1,15 +1,16 @@
-package server
+package api
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/Volkacid/razorblade/internal/app/server"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 )
 
-func TestAPIPostHandler(t *testing.T) {
+func TestPostAPIHandler(t *testing.T) {
 	tests := []struct {
 		name       string
 		query      URL
@@ -32,7 +33,7 @@ func TestAPIPostHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			marshalledQuery, _ := json.Marshal(tt.query)
 			reader := bytes.NewReader(marshalledQuery)
-			recorder := TestRequest("/api/shorten", http.MethodPost, reader, db)
+			recorder := server.TestRequest("/api/shorten", http.MethodPost, reader, db)
 			response := recorder.Result()
 			defer response.Body.Close()
 			assert.Equal(t, tt.statusCode, response.StatusCode)
