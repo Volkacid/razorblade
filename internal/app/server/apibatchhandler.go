@@ -24,7 +24,7 @@ func BatchHandler(storage *storage.Storage) http.HandlerFunc {
 		body, err := io.ReadAll(request.Body)
 		defer request.Body.Close()
 		if err != nil {
-			http.Error(writer, "Please make a correct request!", http.StatusBadRequest)
+			http.Error(writer, "Please make a correct request", http.StatusBadRequest)
 			return
 		}
 
@@ -41,6 +41,10 @@ func BatchHandler(storage *storage.Storage) http.HandlerFunc {
 		batchValues := make(map[string]string)
 
 		for _, q := range query {
+			if !service.ValidateURL(q.OriginalURL) {
+				http.Error(writer, "Incorrect URL", http.StatusBadRequest)
+				return
+			}
 			foundStr := service.GenerateShortString(storage)
 			batchValues[foundStr] = q.OriginalURL
 			response = append(response, BatchResponse{CorrelationID: q.CorrelationID, ShortURL: config.GetServerConfig().BaseURL + "/" + foundStr})

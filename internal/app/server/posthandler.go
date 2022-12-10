@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
@@ -10,7 +11,7 @@ import (
 	"strings"
 )
 
-func PostHandler(storage *storage.Storage) http.HandlerFunc {
+func PostHandler(db *storage.Storage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		var str string
 		body, err := io.ReadAll(request.Body)
@@ -30,11 +31,18 @@ func PostHandler(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
+		var duplicateErr *storage.DuplicateError
+		if key, err := db.FindDuplicate(str); errors.As(err, &duplicateErr) {
+			writer.WriteHeader(http.StatusConflict)
+			writer.Write([]byte(config.GetServerConfig().BaseURL + "/" + key))
+			return
+		}
+
 		ctx := request.Context()
 		userID := ctx.Value(config.UserID{}).(string)
 
-		foundStr := service.GenerateShortString(storage)
-		storage.SaveValue(foundStr, str, userID)
+		foundStr := service.GenerateShortString(db)
+		db.SaveValue(foundStr, str, userID)
 		writer.WriteHeader(http.StatusCreated)
 		writer.Write([]byte(config.GetServerConfig().BaseURL + "/" + foundStr))
 	}

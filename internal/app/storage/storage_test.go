@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -20,7 +19,7 @@ func TestStorageGetValue(t *testing.T) {
 		{
 			name: "Trying to get value that isn't stored",
 			key:  "anothertestkey",
-			err:  errors.New("value not found"),
+			err:  NotFoundError(),
 		},
 	}
 	db := CreateTestStorage()

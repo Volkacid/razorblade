@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
@@ -17,7 +18,7 @@ type Result struct {
 	URL string `json:"result"`
 }
 
-func PostAPIHandler(storage *storage.Storage) http.HandlerFunc {
+func PostAPIHandler(db *storage.Storage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		body, err := io.ReadAll(request.Body)
 		defer request.Body.Close()
@@ -33,11 +34,20 @@ func PostAPIHandler(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
+		var duplicateErr *storage.DuplicateError
+		if key, err := db.FindDuplicate(receivedURL.URL); errors.As(err, &duplicateErr) {
+			writer.WriteHeader(http.StatusConflict)
+			duplicateResult := Result{URL: config.GetServerConfig().BaseURL + "/" + key}
+			marshaledResult, _ := json.Marshal(duplicateResult)
+			writer.Write(marshaledResult)
+			return
+		}
+
 		ctx := request.Context()
 		userID := ctx.Value(config.UserID{}).(string)
 
-		foundStr := service.GenerateShortString(storage)
-		storage.SaveValue(foundStr, receivedURL.URL, userID)
+		foundStr := service.GenerateShortString(db)
+		db.SaveValue(foundStr, receivedURL.URL, userID)
 		result := Result{URL: config.GetServerConfig().BaseURL + "/" + foundStr}
 		marshaledResult, _ := json.Marshal(result)
 		writer.Header().Set("Content-Type", "application/json")

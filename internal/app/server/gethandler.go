@@ -1,21 +1,27 @@
 package server
 
 import (
-	"fmt"
+	"errors"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
-func GetHandler(storage *storage.Storage) http.HandlerFunc {
+func GetHandler(db *storage.Storage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		key := chi.URLParam(request, "key")
-		if receivedValue, err := storage.GetValue(key); err != nil {
-			fmt.Println(err)
-			http.Error(writer, "Not found", http.StatusNotFound)
-		} else {
-			writer.Header().Set("Location", receivedValue)
-			writer.WriteHeader(http.StatusTemporaryRedirect)
+		receivedValue, err := db.GetValue(key)
+		if err != nil {
+			var nfError *storage.NFError
+			if errors.As(err, &nfError) {
+				http.Error(writer, "Not found", http.StatusNotFound)
+				return
+			}
+			http.Error(writer, "Unknown error", http.StatusInternalServerError)
+			return
 		}
+
+		writer.Header().Set("Location", receivedValue)
+		writer.WriteHeader(http.StatusTemporaryRedirect)
 	}
 }

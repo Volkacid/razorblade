@@ -34,6 +34,9 @@ type UserURLs struct {
 
 var mutex = &sync.RWMutex{}
 
+// var NotFoundError = errors.New("storage: not found")
+//type NotFoundError error
+
 func CreateStorage(pgPool *pgxpool.Pool) *Storage {
 	servConf := config.GetServerConfig()
 	if CheckDBConnection() {
@@ -70,7 +73,11 @@ func (storage *Storage) GetValue(key string) (string, error) {
 		}
 		var value string
 		err = dbConn.QueryRow(context.Background(), "SELECT original FROM urls WHERE short=$1", key).Scan(&value)
-		return value, err
+		if err != nil {
+			return "", NotFoundError()
+		}
+		return value, nil
+
 	case ByFile:
 		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
@@ -92,20 +99,19 @@ func (storage *Storage) GetValue(key string) (string, error) {
 		}
 		if foundValue != "" {
 			return foundValue, nil
-		} else {
-			return "", errors.New("value not found")
 		}
+		return "", NotFoundError()
+
 	case byMap:
 		mutex.RLock()
 		value, ok := storage.dbMap[key]
 		mutex.RUnlock()
 		if !ok {
-			return "", errors.New("value not found")
-		} else {
-			return value, nil
+			return "", NotFoundError()
 		}
+		return value, nil
 	}
-	return "", nil
+	return "", errors.New("unknown error")
 }
 
 func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
@@ -119,6 +125,9 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 			return nil, err
 		}
 		rows, err := dbConn.Query(context.Background(), "SELECT short, original FROM urls WHERE userid=$1", userID)
+		if err != nil {
+			return nil, err
+		}
 		for rows.Next() {
 			var rowValue UserURLs
 			err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL)
@@ -127,11 +136,11 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 			}
 			foundValues = append(foundValues, rowValue)
 		}
-		if err != nil {
-			return nil, err
-		} else {
-			return foundValues, nil
+		if foundValues == nil {
+			return nil, NotFoundError()
 		}
+		return foundValues, nil
+
 	case ByFile:
 		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
 		if err != nil {
@@ -152,13 +161,14 @@ func (storage *Storage) GetValuesByID(userID string) ([]UserURLs, error) {
 		}
 		if foundValues != nil {
 			return foundValues, nil
-		} else {
-			return nil, errors.New("values not found")
 		}
+		return nil, NotFoundError()
+
 	case byMap:
 		return nil, errors.New("unable to open database")
 	}
-	return nil, nil
+
+	return nil, errors.New("unknown error")
 }
 
 func (storage *Storage) SaveValue(key string, value string, userID string) {
@@ -174,6 +184,7 @@ func (storage *Storage) SaveValue(key string, value string, userID string) {
 			panic(err)
 		}
 		return
+
 	case ByFile:
 		db, err := os.OpenFile(storage.storageFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 		if err != nil {
@@ -189,6 +200,7 @@ func (storage *Storage) SaveValue(key string, value string, userID string) {
 			panic(err)
 		}
 		return
+
 	case byMap:
 		mutex.Lock()
 		storage.dbMap[key] = value
@@ -216,4 +228,56 @@ func (storage *Storage) BatchSave(values map[string]string, userID string) error
 	bs := dbConn.SendBatch(context.Background(), batch)
 	_, err = bs.Exec()
 	return err
+}
+
+func (storage *Storage) FindDuplicate(value string) (string, error) {
+	switch storage.connType {
+	case ByDB:
+		dbConn, err := storage.dbPool.Acquire(context.Background())
+		defer dbConn.Release()
+		if err != nil {
+			return "", err
+		}
+		var key string
+		err = dbConn.QueryRow(context.Background(), "SELECT short FROM urls WHERE original=$1", value).Scan(&key)
+		if err != nil {
+			return "", err
+		}
+		return key, FoundDuplicateError()
+
+	case ByFile:
+		db, err := os.OpenFile(storage.storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
+		if err != nil {
+			panic(err)
+		}
+		key := ""
+		mutex.RLock()
+		scanner := bufio.NewScanner(db)
+		for scanner.Scan() {
+			if strings.Contains(scanner.Text(), value) {
+				key, _, _ = strings.Cut(scanner.Text(), ":-:")
+				break
+			}
+		}
+		mutex.RUnlock()
+		if err = db.Close(); err != nil {
+			panic(err)
+		}
+		if key != "" {
+			return key, FoundDuplicateError()
+		}
+		return "", NotFoundError()
+
+	case byMap:
+		mutex.RLock()
+		for k, v := range storage.dbMap {
+			if v == value {
+				return k, nil
+			}
+		}
+		mutex.RUnlock()
+		return "", NotFoundError()
+	}
+
+	return "", errors.New("unknown error")
 }
