@@ -36,6 +36,7 @@ func PostAPIHandler(db *storage.Storage) http.HandlerFunc {
 
 		var duplicateErr *storage.DuplicateError
 		if key, err := db.FindDuplicate(receivedURL.URL); errors.As(err, &duplicateErr) {
+			writer.Header().Set("Content-Type", "application/json")
 			writer.WriteHeader(http.StatusConflict)
 			duplicateResult := Result{URL: config.GetServerConfig().BaseURL + "/" + key}
 			marshaledResult, _ := json.Marshal(duplicateResult)
