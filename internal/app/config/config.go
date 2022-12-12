@@ -17,7 +17,10 @@ var servConf *ServerConfig
 func GetServerConfig() *ServerConfig {
 	if servConf == nil {
 		servConf = &ServerConfig{}
-		env.Parse(servConf)
+		err := env.Parse(servConf)
+		if err != nil {
+			return nil
+		}
 		flag.StringVar(&servConf.ServerAddress, "a", servConf.ServerAddress, "address:port to listen")
 		flag.StringVar(&servConf.BaseURL, "b", servConf.BaseURL, "base url of shortener")
 		flag.StringVar(&servConf.StorageFile, "f", servConf.StorageFile, "address of db file")

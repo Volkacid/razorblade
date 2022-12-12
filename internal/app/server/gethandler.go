@@ -7,21 +7,19 @@ import (
 	"net/http"
 )
 
-func GetHandler(db *storage.Storage) http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		key := chi.URLParam(request, "key")
-		receivedValue, err := db.GetValue(key)
-		if err != nil {
-			var nfError *storage.NFError
-			if errors.As(err, &nfError) {
-				http.Error(writer, "Not found", http.StatusNotFound)
-				return
-			}
-			http.Error(writer, "Unknown error", http.StatusInternalServerError)
+func (handlers *Handlers) GetHandler(writer http.ResponseWriter, request *http.Request) {
+	key := chi.URLParam(request, "key")
+	receivedValue, err := handlers.storage.GetValue(key)
+	if err != nil {
+		var nfError *storage.NFError
+		if errors.As(err, &nfError) {
+			http.Error(writer, "Not found", http.StatusNotFound)
 			return
 		}
-
-		writer.Header().Set("Location", receivedValue)
-		writer.WriteHeader(http.StatusTemporaryRedirect)
+		http.Error(writer, "Unknown error", http.StatusInternalServerError)
+		return
 	}
+
+	writer.Header().Set("Location", receivedValue)
+	writer.WriteHeader(http.StatusTemporaryRedirect)
 }

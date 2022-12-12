@@ -1,26 +1,13 @@
 package service
 
 import (
-	"github.com/Volkacid/razorblade/internal/app/storage"
-	"math/rand"
-	"strings"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
-var chars = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "abcdefghijklmnopqrstuvwxyz" + "0123456789")
-
-func SetCreatorSeed(seed int64) {
-	rand.Seed(seed)
-}
-
-func GenerateShortString(storage *storage.Storage) string {
-	var builder strings.Builder
-	for { //На случай, если сгенерированная последовательность уже будет занята
-		for i := 0; i < 6; i++ {
-			builder.WriteRune(chars[rand.Intn(len(chars))])
-		}
-		if _, err := storage.GetValue(builder.String()); err != nil {
-			return builder.String()
-		}
-		builder.Reset()
-	}
+func GenerateShortString(origURL string) string {
+	hashGen := sha256.New()
+	hashGen.Write([]byte(origURL))
+	result := hex.EncodeToString(hashGen.Sum(nil))
+	return result[:7]
 }

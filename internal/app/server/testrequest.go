@@ -8,18 +8,20 @@ import (
 	"net/http/httptest"
 )
 
-func TestRequest(query, method string, bodyReader io.Reader, db *storage.Storage) *httptest.ResponseRecorder {
+func TestRequest(query, method string, bodyReader io.Reader, db storage.Storage) *httptest.ResponseRecorder {
+	handlers := NewHandlersSet(db)
+
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
 		router.Use(middlewares.GetUserID)
 		router.Use(middlewares.GzipHandle)
-		router.Get("/", MainPage)
-		router.Get("/{key}", GetHandler(db))
-		router.Get("/ping", PingDB())
-		router.Get("/api/user/urls", UrlsAPIHandler(db))
-		router.Post("/", PostHandler(db))
-		router.Post("/api/shorten", PostAPIHandler(db))
-		router.Post("/api/shorten/batch", BatchHandler(db))
+		router.Get("/", handlers.MainPage)
+		router.Get("/{key}", handlers.GetHandler)
+		router.Get("/ping", handlers.PingDB)
+		router.Get("/api/user/urls", handlers.UrlsAPIHandler)
+		router.Post("/", handlers.PostHandler)
+		router.Post("/api/shorten", handlers.PostAPIHandler)
+		router.Post("/api/shorten/batch", handlers.BatchHandler)
 	})
 	request := httptest.NewRequest(method, query, bodyReader)
 	writer := httptest.NewRecorder()

@@ -2,7 +2,7 @@ package server
 
 import "net/http"
 
-func MainPage(writer http.ResponseWriter, request *http.Request) {
+func (handlers *Handlers) MainPage(writer http.ResponseWriter, request *http.Request) {
 	var form = `<html>
     <head>
     <title></title>
