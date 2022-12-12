@@ -44,7 +44,7 @@ func (handlers *Handlers) PostAPIHandler(writer http.ResponseWriter, request *ht
 	}
 
 	ctx := request.Context()
-	userID := ctx.Value(config.UserID).(string)
+	userID := ctx.Value(config.UserID{}).(string)
 
 	foundStr := service.GenerateShortString(receivedURL.URL)
 	err = handlers.storage.SaveValue(foundStr, receivedURL.URL, userID)

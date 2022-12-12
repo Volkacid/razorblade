@@ -38,7 +38,7 @@ func (handlers *Handlers) PostHandler(writer http.ResponseWriter, request *http.
 	}
 
 	ctx := request.Context()
-	userID := ctx.Value(config.UserID).(string)
+	userID := ctx.Value(config.UserID{}).(string)
 
 	foundStr := service.GenerateShortString(str)
 	err = handlers.storage.SaveValue(foundStr, str, userID)

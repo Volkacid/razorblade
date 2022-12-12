@@ -10,7 +10,7 @@ import (
 
 func (handlers *Handlers) UrlsAPIHandler(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
-	userID := ctx.Value(config.UserID).(string)
+	userID := ctx.Value(config.UserID{}).(string)
 
 	values, err := handlers.storage.GetValuesByID(userID)
 	if err != nil {

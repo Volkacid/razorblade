@@ -34,7 +34,7 @@ func (handlers *Handlers) BatchHandler(writer http.ResponseWriter, request *http
 	}
 
 	ctx := request.Context()
-	userID := ctx.Value(config.UserID).(string)
+	userID := ctx.Value(config.UserID{}).(string)
 	response := make([]BatchResponse, len(query))
 	batchValues := make(map[string]string, len(query))
 
