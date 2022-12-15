@@ -20,7 +20,7 @@ func GetUserID(next http.Handler) http.Handler {
 			http.SetCookie(writer, createCookie(sign))
 		} else {
 			userValue, _ := hex.DecodeString(userID.Value)
-			if !hmac.Equal(sign, userValue[:len(userValue)-5]) {
+			if !hmac.Equal(sign, userValue[:len(userValue)-10]) {
 				http.SetCookie(writer, createCookie(sign))
 			}
 		}
@@ -31,7 +31,7 @@ func GetUserID(next http.Handler) http.Handler {
 }
 
 func createCookie(sign []byte) *http.Cookie {
-	bytes := make([]byte, 5)
+	bytes := make([]byte, 10)
 	rand.Read(bytes)
 	sign = append(sign, bytes...)
 	return &http.Cookie{Name: "UserID", Value: hex.EncodeToString(sign)}
