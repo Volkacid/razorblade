@@ -34,7 +34,7 @@ func (db *dbMap) GetValuesByID(_ context.Context, userID string) ([]UserURL, err
 			foundValues = append(foundValues, UserURL{OriginalURL: v.OrigURL, ShortURL: k})
 		}
 	}
-	if foundValues != nil {
+	if len(foundValues) != 0 {
 		return foundValues, nil
 	}
 	return nil, NotFoundError()

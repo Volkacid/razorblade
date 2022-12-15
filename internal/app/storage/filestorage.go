@@ -60,7 +60,7 @@ func (file *File) GetValuesByID(_ context.Context, userID string) ([]UserURL, er
 	if err = db.Close(); err != nil {
 		return foundValues, err
 	}
-	if foundValues != nil {
+	if len(foundValues) != 0 {
 		return foundValues, nil
 	}
 	return nil, NotFoundError()

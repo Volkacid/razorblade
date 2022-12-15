@@ -57,8 +57,8 @@ func (db *DB) GetValuesByID(ctx context.Context, userID string) ([]UserURL, erro
 		}
 		foundValues = append(foundValues, rowValue)
 	}
-	if foundValues == nil {
-		return nil, NotFoundError()
+	if len(foundValues) != 0 {
+		return foundValues, nil
 	}
 	return foundValues, nil
 }
