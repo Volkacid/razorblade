@@ -23,29 +23,29 @@ func NewDB() *DB {
 	return &DB{dbPool: pgPool}
 }
 
-func (db *DB) GetValue(key string) (string, error) {
-	dbConn, err := db.dbPool.Acquire(context.Background())
-	defer dbConn.Release()
+func (db *DB) GetValue(ctx context.Context, key string) (string, error) {
+	dbConn, err := db.dbPool.Acquire(ctx)
 	if err != nil {
 		return "", err
 	}
+	defer dbConn.Release()
 	var value string
-	err = dbConn.QueryRow(context.Background(), "SELECT original FROM urls WHERE short=$1", key).Scan(&value)
+	err = dbConn.QueryRow(ctx, "SELECT original FROM urls WHERE short=$1", key).Scan(&value)
 	if err != nil {
 		return "", NotFoundError()
 	}
 	return value, nil
 }
 
-func (db *DB) GetValuesByID(userID string) ([]UserURL, error) {
-	var foundValues []UserURL
+func (db *DB) GetValuesByID(ctx context.Context, userID string) ([]UserURL, error) {
+	foundValues := make([]UserURL, 0, 16)
 
-	dbConn, err := db.dbPool.Acquire(context.Background())
-	defer dbConn.Release()
+	dbConn, err := db.dbPool.Acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := dbConn.Query(context.Background(), "SELECT short, original FROM urls WHERE userid=$1", userID)
+	defer dbConn.Release()
+	rows, err := dbConn.Query(ctx, "SELECT short, original FROM urls WHERE userid=$1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +63,13 @@ func (db *DB) GetValuesByID(userID string) ([]UserURL, error) {
 	return foundValues, nil
 }
 
-func (db *DB) SaveValue(key string, value string, userID string) error {
-	dbConn, err := db.dbPool.Acquire(context.Background())
-	defer dbConn.Release()
+func (db *DB) SaveValue(ctx context.Context, key string, value string, userID string) error {
+	dbConn, err := db.dbPool.Acquire(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = dbConn.Exec(context.Background(), "INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", key, value, userID)
+	defer dbConn.Release()
+	_, err = dbConn.Exec(ctx, "INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", key, value, userID)
 	if err != nil {
 		return err
 	}
@@ -83,23 +83,23 @@ func (db *DB) BatchSave(ctx context.Context, values map[string]string, userID st
 		batch.Queue("INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", k, v, userID)
 	}
 	dbConn, err := db.dbPool.Acquire(ctx)
-	defer dbConn.Release()
 	if err != nil {
 		return err
 	}
+	defer dbConn.Release()
 	bs := dbConn.SendBatch(ctx, batch)
 	_, err = bs.Exec()
 	return err
 }
 
-func (db *DB) FindDuplicate(value string) (string, error) {
-	dbConn, err := db.dbPool.Acquire(context.Background())
-	defer dbConn.Release()
+func (db *DB) FindDuplicate(ctx context.Context, value string) (string, error) {
+	dbConn, err := db.dbPool.Acquire(ctx)
 	if err != nil {
 		return "", err
 	}
+	defer dbConn.Release()
 	var key string
-	err = dbConn.QueryRow(context.Background(), "SELECT short FROM urls WHERE original=$1", value).Scan(&key)
+	err = dbConn.QueryRow(ctx, "SELECT short FROM urls WHERE original=$1", value).Scan(&key)
 	if err != nil {
 		return "", err
 	}

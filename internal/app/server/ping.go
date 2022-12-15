@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (handlers *Handlers) PingDB(writer http.ResponseWriter, request *http.Request) {
+func (handlers *Handlers) PingDB(writer http.ResponseWriter, _ *http.Request) {
 	if !storage.CheckDBConnection() {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return

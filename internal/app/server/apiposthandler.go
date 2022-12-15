@@ -20,11 +20,11 @@ type Result struct {
 
 func (handlers *Handlers) PostAPIHandler(writer http.ResponseWriter, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
-	defer request.Body.Close()
 	if err != nil {
 		http.Error(writer, "Please make a correct request!", http.StatusBadRequest)
 		return
 	}
+	defer request.Body.Close()
 
 	receivedURL := URL{}
 	err = json.Unmarshal(body, &receivedURL)
@@ -33,8 +33,11 @@ func (handlers *Handlers) PostAPIHandler(writer http.ResponseWriter, request *ht
 		return
 	}
 
+	ctx := request.Context()
+	userID := ctx.Value(config.UserID{}).(string)
+
 	var duplicateErr *storage.DuplicateError
-	if key, err := handlers.storage.FindDuplicate(receivedURL.URL); errors.As(err, &duplicateErr) {
+	if key, err := handlers.storage.FindDuplicate(ctx, receivedURL.URL); errors.As(err, &duplicateErr) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusConflict)
 		duplicateResult := Result{URL: handlers.servConf.BaseURL + "/" + key}
@@ -43,11 +46,8 @@ func (handlers *Handlers) PostAPIHandler(writer http.ResponseWriter, request *ht
 		return
 	}
 
-	ctx := request.Context()
-	userID := ctx.Value(config.UserID{}).(string)
-
 	foundStr := service.GenerateShortString(receivedURL.URL)
-	err = handlers.storage.SaveValue(foundStr, receivedURL.URL, userID)
+	err = handlers.storage.SaveValue(ctx, foundStr, receivedURL.URL, userID)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return

@@ -12,7 +12,7 @@ func (handlers *Handlers) UrlsAPIHandler(writer http.ResponseWriter, request *ht
 	ctx := request.Context()
 	userID := ctx.Value(config.UserID{}).(string)
 
-	values, err := handlers.storage.GetValuesByID(userID)
+	values, err := handlers.storage.GetValuesByID(ctx, userID)
 	if err != nil {
 		var nfError *storage.NFError
 		if errors.As(err, &nfError) {

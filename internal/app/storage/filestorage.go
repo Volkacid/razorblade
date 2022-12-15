@@ -16,13 +16,14 @@ func NewFileDB(filePath string) *File {
 	return &File{Path: filePath}
 }
 
-func (file *File) GetValue(key string) (string, error) {
+func (file *File) GetValue(_ context.Context, key string) (string, error) {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	db, err := os.OpenFile(file.Path, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return "", err
 	}
 	foundValue := ""
-	mutex.RLock()
 	scanner := bufio.NewScanner(db)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), key) {
@@ -31,7 +32,6 @@ func (file *File) GetValue(key string) (string, error) {
 			break
 		}
 	}
-	mutex.RUnlock()
 	if err = db.Close(); err != nil {
 		return foundValue, err
 	}
@@ -41,14 +41,14 @@ func (file *File) GetValue(key string) (string, error) {
 	return "", NotFoundError()
 }
 
-func (file *File) GetValuesByID(userID string) ([]UserURL, error) {
-	var foundValues []UserURL
-
+func (file *File) GetValuesByID(_ context.Context, userID string) ([]UserURL, error) {
+	foundValues := make([]UserURL, 0, 16)
+	mutex.RLock()
+	defer mutex.RUnlock()
 	db, err := os.OpenFile(file.Path, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return nil, err
 	}
-	mutex.RLock()
 	scanner := bufio.NewScanner(db)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), userID) {
@@ -57,7 +57,6 @@ func (file *File) GetValuesByID(userID string) ([]UserURL, error) {
 			foundValues = append(foundValues, UserURL{ShortURL: config.GetServerConfig().BaseURL + "/" + short, OriginalURL: original})
 		}
 	}
-	mutex.RUnlock()
 	if err = db.Close(); err != nil {
 		return foundValues, err
 	}
@@ -67,26 +66,32 @@ func (file *File) GetValuesByID(userID string) ([]UserURL, error) {
 	return nil, NotFoundError()
 }
 
-func (file *File) SaveValue(key string, value string, userID string) error {
+func (file *File) SaveValue(_ context.Context, key string, value string, userID string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
 	db, err := os.OpenFile(file.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 	if err != nil {
 		return err
 	}
-	mutex.Lock()
 	_, err = db.WriteString(key + ":-:" + value + ":_:" + userID + "\n")
 	if err != nil {
 		return err
 	}
-	mutex.Unlock()
 	if err = db.Close(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (file *File) BatchSave(ctx context.Context, values map[string]string, userID string) error {
+func (file *File) BatchSave(_ context.Context, values map[string]string, userID string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	db, err := os.OpenFile(file.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
+	if err != nil {
+		return err
+	}
 	for k, v := range values {
-		err := file.SaveValue(k, v, userID)
+		_, err = db.WriteString(k + ":-:" + v + ":_:" + userID + "\n")
 		if err != nil {
 			return err
 		}
@@ -94,13 +99,14 @@ func (file *File) BatchSave(ctx context.Context, values map[string]string, userI
 	return nil
 }
 
-func (file *File) FindDuplicate(value string) (string, error) {
+func (file *File) FindDuplicate(_ context.Context, value string) (string, error) {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	db, err := os.OpenFile(file.Path, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return "", err
 	}
 	key := ""
-	mutex.RLock()
 	scanner := bufio.NewScanner(db)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), value) {
@@ -108,7 +114,6 @@ func (file *File) FindDuplicate(value string) (string, error) {
 			break
 		}
 	}
-	mutex.RUnlock()
 	if err = db.Close(); err != nil {
 		return "", err
 	}

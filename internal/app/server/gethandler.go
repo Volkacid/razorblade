@@ -9,7 +9,7 @@ import (
 
 func (handlers *Handlers) GetHandler(writer http.ResponseWriter, request *http.Request) {
 	key := chi.URLParam(request, "key")
-	receivedValue, err := handlers.storage.GetValue(key)
+	receivedValue, err := handlers.storage.GetValue(request.Context(), key)
 	if err != nil {
 		var nfError *storage.NFError
 		if errors.As(err, &nfError) {

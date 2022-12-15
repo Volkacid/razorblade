@@ -8,11 +8,11 @@ import (
 )
 
 type Storage interface {
-	GetValue(key string) (string, error)
-	GetValuesByID(userID string) ([]UserURL, error)
-	SaveValue(key string, value string, userID string) error
+	GetValue(ctx context.Context, key string) (string, error)
+	GetValuesByID(ctx context.Context, userID string) ([]UserURL, error)
+	SaveValue(ctx context.Context, key string, value string, userID string) error
 	BatchSave(ctx context.Context, values map[string]string, userID string) error
-	FindDuplicate(value string) (string, error)
+	FindDuplicate(ctx context.Context, value string) (string, error)
 }
 
 type UserURL struct {

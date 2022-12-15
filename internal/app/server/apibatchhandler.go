@@ -20,11 +20,11 @@ type BatchResponse struct {
 
 func (handlers *Handlers) BatchHandler(writer http.ResponseWriter, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
-	defer request.Body.Close()
 	if err != nil {
 		http.Error(writer, "Please make a correct request", http.StatusBadRequest)
 		return
 	}
+	defer request.Body.Close()
 
 	var query []BatchQuery
 	err = json.Unmarshal(body, &query)
