@@ -49,7 +49,7 @@ func (db *dbMap) SaveValue(_ context.Context, key string, value string, userID s
 
 func (db *dbMap) BatchSave(_ context.Context, values map[string]string, userID string) error {
 	mutex.Lock()
-	defer mutex.RUnlock()
+	defer mutex.Unlock()
 	for k, v := range values {
 		db.db[k] = IDValue{OrigURL: v, UserID: userID}
 	}

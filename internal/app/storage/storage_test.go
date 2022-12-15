@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -23,11 +24,12 @@ func TestStorageGetValue(t *testing.T) {
 		},
 	}
 	db := CreateTestStorage()
-	db.SaveValue("testkey", "somevalue", "someid")
+	ctx := context.Background()
+	db.SaveValue(ctx, "testkey", "somevalue", "someid")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, resultErr := db.GetValue(tt.key)
+			_, resultErr := db.GetValue(ctx, tt.key)
 			assert.Equal(t, tt.err, resultErr)
 		})
 	}
