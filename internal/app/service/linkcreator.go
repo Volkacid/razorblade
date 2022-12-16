@@ -1,20 +1,13 @@
 package service
 
 import (
-	"math/rand"
-	"strings"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
-var chars = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "abcdefghijklmnopqrstuvwxyz" + "0123456789")
-
-func SetCreatorSeed(seed int64) {
-	rand.Seed(seed)
-}
-
-func GenerateShortString() string {
-	var builder strings.Builder
-	for i := 0; i < 6; i++ {
-		builder.WriteRune(chars[rand.Intn(len(chars))])
-	}
-	return builder.String()
+func GenerateShortString(origURL string) string {
+	hashGen := sha256.New()
+	hashGen.Write([]byte(origURL))
+	result := hex.EncodeToString(hashGen.Sum(nil))
+	return result[:7]
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -27,8 +28,9 @@ func TestGetHandler(t *testing.T) {
 			statusCode: 404,
 		},
 	}
-	db := storage.CreateStorage(false)
-	db.SaveValue("testlink", "https://yandex.com")
+	db := storage.CreateTestStorage()
+	ctx := context.Background()
+	db.SaveValue(ctx, "testlink", "https://yandex.com", "someid")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

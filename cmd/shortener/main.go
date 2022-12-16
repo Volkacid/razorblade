@@ -3,28 +3,29 @@ package main
 import (
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/server"
-	"github.com/Volkacid/razorblade/internal/app/service"
+	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
-	"time"
 )
 
 func main() {
 	servConf := config.GetServerConfig()
-	isStorageFileExist := servConf.StorageFile != ""
-	db := storage.CreateStorage(isStorageFileExist)
-	service.SetCreatorSeed(time.Now().Unix())
+	db := storage.CreateStorage()
+	handlers := server.NewHandlersSet(db)
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
-		router.Use(middleware.Compress(5, "gzip"))
-		router.Get("/", server.MainPage)
-		router.Get("/{key}", server.GetHandler(db))
-		router.Post("/", server.PostHandler(db))
-		router.Post("/api/shorten", server.APIPostHandler(db))
+		router.Use(middlewares.GetUserID)
+		router.Use(middlewares.GzipHandle)
+		router.Get("/", handlers.MainPage)
+		router.Get("/{key}", handlers.GetHandler)
+		router.Get("/ping", handlers.PingDB)
+		router.Get("/api/user/urls", handlers.UrlsAPIHandler)
+		router.Post("/", handlers.PostHandler)
+		router.Post("/api/shorten", handlers.PostAPIHandler)
+		router.Post("/api/shorten/batch", handlers.BatchHandler)
 	})
-	log.Fatal(http.ListenAndServe(servConf.ServerAddress, server.GzipHandle(router)))
+	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
 }

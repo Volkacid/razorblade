@@ -1,86 +1,48 @@
 package storage
 
 import (
-	"bufio"
-	"errors"
+	"context"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
-	"os"
-	"strings"
 	"sync"
 )
 
-type Storage struct {
-	db map[string]string
+type Storage interface {
+	GetValue(ctx context.Context, key string) (string, error)
+	GetValuesByID(ctx context.Context, userID string) ([]UserURL, error)
+	SaveValue(ctx context.Context, key string, value string, userID string) error
+	BatchSave(ctx context.Context, values map[string]string, userID string) error
+	FindDuplicate(ctx context.Context, value string) (string, error)
+}
+
+type UserURL struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
 }
 
 var mutex = &sync.RWMutex{}
-var storageFilePath string
-var storageFileExist bool
 
-func CreateStorage(byFile bool) *Storage {
-	if byFile {
-		storageFilePath = config.GetServerConfig().StorageFile
-		storageFileExist = storageFilePath != ""
-		return &Storage{}
-	} else {
-		return &Storage{db: make(map[string]string)}
+func CreateStorage() Storage {
+	servConf := config.GetServerConfig()
+	if CheckDBConnection() {
+		err := InitializeDB()
+		if err != nil {
+			fmt.Printf("DB initialization error(%v). Storage created in map.", err)
+			return NewMapDB()
+		}
+		fmt.Println("Storage created in DB")
+		return NewDB()
 	}
+
+	if servConf.StorageFile != "" {
+		fmt.Println("Storage created in file")
+		return NewFileDB(servConf.StorageFile)
+	}
+
+	fmt.Println("Storage created in map")
+	return NewMapDB()
 }
 
-func (storage *Storage) GetValue(key string) (string, error) {
-	if storageFileExist {
-		db, err := os.OpenFile(storageFilePath, os.O_RDONLY|os.O_CREATE, 0777)
-		if err != nil {
-			panic(err)
-		}
-		foundValue := ""
-		mutex.RLock()
-		scanner := bufio.NewScanner(db)
-		for scanner.Scan() {
-			if strings.Contains(scanner.Text(), key) {
-				_, foundValue, _ = strings.Cut(scanner.Text(), ":-:")
-				break
-			}
-		}
-		mutex.RUnlock()
-		if err = db.Close(); err != nil {
-			panic(err)
-		}
-		if foundValue != "" {
-			return foundValue, nil
-		} else {
-			return "", errors.New("value not found")
-		}
-	} else {
-		mutex.RLock()
-		value, ok := storage.db[key]
-		mutex.RUnlock()
-		if !ok {
-			return "", errors.New("value not found")
-		} else {
-			return value, nil
-		}
-	}
-}
-
-func (storage *Storage) SaveValue(key string, value string) {
-	if storageFileExist {
-		db, err := os.OpenFile(storageFilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
-		if err != nil {
-			panic(err)
-		}
-		mutex.Lock()
-		_, err = db.WriteString(key + ":-:" + value + "\n")
-		if err != nil {
-			panic(err)
-		}
-		mutex.Unlock()
-		if err = db.Close(); err != nil {
-			panic(err)
-		}
-	} else {
-		mutex.Lock()
-		storage.db[key] = value
-		mutex.Unlock()
-	}
+func CreateTestStorage() Storage {
+	return NewMapDB()
 }
