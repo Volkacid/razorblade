@@ -51,10 +51,10 @@ func (db *DB) GetValuesByID(ctx context.Context, userID string) ([]UserURL, erro
 	}
 	defer dbConn.Release()
 	rows, err := dbConn.Query(ctx, "SELECT short, original, deleted FROM urls WHERE userid=$1", userID)
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var rowValue UserURL
 		var isDeleted bool

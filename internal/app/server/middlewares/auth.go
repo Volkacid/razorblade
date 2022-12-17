@@ -8,13 +8,12 @@ import (
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"math/rand"
 	"net/http"
-	"strings"
 )
 
 func GetUserID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		userIP := request.RemoteAddr
-		userIP, _, _ = strings.Cut(userIP, ":")
+		//userIP, _, _ = strings.Cut(userIP, ":")
 		sign := createSign(userIP)
 		userID, err := request.Cookie("UserID")
 		if err != nil {
