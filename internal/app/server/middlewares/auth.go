@@ -8,19 +8,20 @@ import (
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"math/rand"
 	"net/http"
+	"strings"
 )
 
 func GetUserID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		userIP := request.RemoteAddr
-		//userIP, _, _ = strings.Cut(userIP, ":")
+		userIP, _, _ = strings.Cut(userIP, ":")
 		sign := createSign(userIP)
 		userID, err := request.Cookie("UserID")
 		if err != nil {
 			http.SetCookie(writer, createCookie(sign))
 		} else {
 			userValue, _ := hex.DecodeString(userID.Value)
-			if !hmac.Equal(sign, userValue[:len(userValue)-10]) {
+			if !hmac.Equal(sign, userValue[:len(userValue)-5]) {
 				http.SetCookie(writer, createCookie(sign))
 			}
 		}
@@ -31,7 +32,7 @@ func GetUserID(next http.Handler) http.Handler {
 }
 
 func createCookie(sign []byte) *http.Cookie {
-	bytes := make([]byte, 10)
+	bytes := make([]byte, 5)
 	rand.Read(bytes)
 	sign = append(sign, bytes...)
 	return &http.Cookie{Name: "UserID", Value: hex.EncodeToString(sign)}

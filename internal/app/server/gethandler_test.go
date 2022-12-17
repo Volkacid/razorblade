@@ -34,7 +34,7 @@ func TestGetHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			recorder := TestRequest(tt.query, http.MethodGet, nil, db)
+			recorder := TestRequest(tt.query, http.MethodGet, nil, db, "someid")
 			response := recorder.Result()
 			defer response.Body.Close()
 			assert.Equal(t, tt.want, response.Header.Get("Location"))

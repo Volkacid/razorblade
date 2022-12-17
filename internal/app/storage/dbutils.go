@@ -26,7 +26,7 @@ func InitializeDB() error {
 		return err
 	}
 	defer conn.Close(ctx)
-	_, err = conn.Exec(ctx, "CREATE TABLE IF NOT EXISTS urls (short varchar(30), original varchar(300), userid varchar(100), PRIMARY KEY (short))")
+	_, err = conn.Exec(ctx, "CREATE TABLE IF NOT EXISTS urls (short varchar(30), original varchar(300), userid varchar(100), deleted boolean, PRIMARY KEY (short))")
 	if err != nil {
 		return err
 	}

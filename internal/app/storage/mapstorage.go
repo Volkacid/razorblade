@@ -1,6 +1,8 @@
 package storage
 
-import "context"
+import (
+	"context"
+)
 
 type IDValue struct {
 	OrigURL string
@@ -22,6 +24,9 @@ func (db *dbMap) GetValue(_ context.Context, key string) (string, error) {
 	if !ok {
 		return "", NotFoundError()
 	}
+	if value.OrigURL == "deleted" {
+		return "", ValueDeletedError()
+	}
 	return value.OrigURL, nil
 }
 
@@ -34,7 +39,7 @@ func (db *dbMap) GetValuesByID(_ context.Context, userID string) ([]UserURL, err
 			foundValues = append(foundValues, UserURL{OriginalURL: v.OrigURL, ShortURL: k})
 		}
 	}
-	if len(foundValues) != 0 {
+	if len(foundValues) != 0 { //Necessary for correct http 204 status handling
 		return foundValues, nil
 	}
 	return nil, NotFoundError()
@@ -65,4 +70,14 @@ func (db *dbMap) FindDuplicate(_ context.Context, value string) (string, error) 
 		}
 	}
 	return "", NotFoundError()
+}
+
+func (db *dbMap) DeleteURLs(urls []string, userID string) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	for _, key := range urls {
+		if db.db[key].UserID == userID {
+			db.db[key] = IDValue{OrigURL: "deleted"}
+		}
+	}
 }

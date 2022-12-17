@@ -26,6 +26,7 @@ func main() {
 		router.Post("/", handlers.PostHandler)
 		router.Post("/api/shorten", handlers.PostAPIHandler)
 		router.Post("/api/shorten/batch", handlers.BatchHandler)
+		router.Delete("/api/user/urls", handlers.DeleteUserURLs)
 	})
 	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
 }

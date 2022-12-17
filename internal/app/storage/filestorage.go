@@ -2,8 +2,11 @@ package storage
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -35,6 +38,9 @@ func (file *File) GetValue(_ context.Context, key string) (string, error) {
 	if err = db.Close(); err != nil {
 		return foundValue, err
 	}
+	if foundValue == "deleted" {
+		return "", ValueDeletedError()
+	}
 	if foundValue != "" {
 		return foundValue, nil
 	}
@@ -54,13 +60,15 @@ func (file *File) GetValuesByID(_ context.Context, userID string) ([]UserURL, er
 		if strings.Contains(scanner.Text(), userID) {
 			value, _, _ := strings.Cut(scanner.Text(), ":_:")
 			short, original, _ := strings.Cut(value, ":-:")
-			foundValues = append(foundValues, UserURL{ShortURL: config.GetServerConfig().BaseURL + "/" + short, OriginalURL: original})
+			if original != "deleted" {
+				foundValues = append(foundValues, UserURL{ShortURL: config.GetServerConfig().BaseURL + "/" + short, OriginalURL: original})
+			}
 		}
 	}
 	if err = db.Close(); err != nil {
 		return foundValues, err
 	}
-	if len(foundValues) != 0 {
+	if len(foundValues) != 0 { //Necessary for correct http 204 status handling
 		return foundValues, nil
 	}
 	return nil, NotFoundError()
@@ -90,6 +98,7 @@ func (file *File) BatchSave(_ context.Context, values map[string]string, userID 
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	for k, v := range values {
 		_, err = db.WriteString(k + ":-:" + v + ":_:" + userID + "\n")
 		if err != nil {
@@ -121,4 +130,20 @@ func (file *File) FindDuplicate(_ context.Context, value string) (string, error)
 		return key, FoundDuplicateError()
 	}
 	return "", NotFoundError()
+}
+
+func (file *File) DeleteURLs(urls []string, userID string) {
+	mutex.RLock()
+	input, err := ioutil.ReadFile(file.Path)
+	mutex.RUnlock()
+	if err != nil {
+		fmt.Println("File reading error: ", err)
+		return
+	}
+	for _, key := range urls {
+		input = bytes.Replace(input, []byte(key), []byte(key+":-:deleted:_:"), -1)
+	}
+	mutex.Lock()
+	ioutil.WriteFile(file.Path, input, 0777)
+	mutex.Unlock()
 }

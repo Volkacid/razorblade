@@ -2,10 +2,12 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -30,9 +32,12 @@ func (db *DB) GetValue(ctx context.Context, key string) (string, error) {
 	}
 	defer dbConn.Release()
 	var value string
-	err = dbConn.QueryRow(ctx, "SELECT original FROM urls WHERE short=$1", key).Scan(&value)
-	if err != nil {
+	var isDeleted bool
+	if err = dbConn.QueryRow(ctx, "SELECT original, deleted FROM urls WHERE short=$1", key).Scan(&value, &isDeleted); err != nil {
 		return "", NotFoundError()
+	}
+	if isDeleted {
+		return "", ValueDeletedError()
 	}
 	return value, nil
 }
@@ -45,19 +50,25 @@ func (db *DB) GetValuesByID(ctx context.Context, userID string) ([]UserURL, erro
 		return nil, err
 	}
 	defer dbConn.Release()
-	rows, err := dbConn.Query(ctx, "SELECT short, original FROM urls WHERE userid=$1", userID)
+	rows, err := dbConn.Query(ctx, "SELECT short, original, deleted FROM urls WHERE userid=$1", userID)
+	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
 		var rowValue UserURL
-		err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL)
-		if err != nil {
+		var isDeleted bool
+		if err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL, &isDeleted); err != nil {
 			return nil, err
 		}
-		foundValues = append(foundValues, rowValue)
+		if err = rows.Err(); err != nil {
+			return nil, err
+		}
+		if !isDeleted {
+			foundValues = append(foundValues, rowValue)
+		}
 	}
-	if len(foundValues) != 0 {
+	if len(foundValues) != 0 { //Necessary for correct http 204 status handling
 		return foundValues, nil
 	}
 	return foundValues, nil
@@ -69,7 +80,7 @@ func (db *DB) SaveValue(ctx context.Context, key string, value string, userID st
 		return err
 	}
 	defer dbConn.Release()
-	_, err = dbConn.Exec(ctx, "INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", key, value, userID)
+	_, err = dbConn.Exec(ctx, "INSERT INTO urls(short, original, userid, deleted) VALUES ($1, $2, $3, FALSE)", key, value, userID)
 	if err != nil {
 		return err
 	}
@@ -80,7 +91,7 @@ func (db *DB) BatchSave(ctx context.Context, values map[string]string, userID st
 
 	batch := &pgx.Batch{}
 	for k, v := range values {
-		batch.Queue("INSERT INTO urls(short, original, userid) VALUES ($1, $2, $3)", k, v, userID)
+		batch.Queue("INSERT INTO urls(short, original, userid, deleted) VALUES ($1, $2, $3, FALSE)", k, v, userID)
 	}
 	dbConn, err := db.dbPool.Acquire(ctx)
 	if err != nil {
@@ -99,9 +110,31 @@ func (db *DB) FindDuplicate(ctx context.Context, value string) (string, error) {
 	}
 	defer dbConn.Release()
 	var key string
-	err = dbConn.QueryRow(ctx, "SELECT short FROM urls WHERE original=$1", value).Scan(&key)
-	if err != nil {
+	if err = dbConn.QueryRow(ctx, "SELECT short FROM urls WHERE original=$1", value).Scan(&key); err != nil {
 		return "", err
 	}
 	return key, FoundDuplicateError()
+}
+
+func (db *DB) DeleteURLs(urls []string, userID string) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	wg := &sync.WaitGroup{}
+	for _, key := range urls {
+		wg.Add(1)
+		go func(key string) {
+			dbConn, err := db.dbPool.Acquire(ctx)
+			if err != nil {
+				fmt.Println("Cannot acquire a DB connection: ", err)
+			} else {
+				defer dbConn.Release()
+				_, err := dbConn.Exec(ctx, "UPDATE urls SET deleted=TRUE WHERE short=$1 AND userid=$2", key, userID)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+			wg.Done()
+		}(key)
+	}
+	wg.Wait()
 }

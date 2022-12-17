@@ -16,6 +16,11 @@ func (handlers *Handlers) GetHandler(writer http.ResponseWriter, request *http.R
 			http.Error(writer, "Not found", http.StatusNotFound)
 			return
 		}
+		var deletedErr *storage.DeletedError
+		if errors.As(err, &deletedErr) {
+			http.Error(writer, "Value deleted", http.StatusGone)
+			return
+		}
 		http.Error(writer, "Unknown error", http.StatusInternalServerError)
 		return
 	}

@@ -32,7 +32,7 @@ func TestPostAPIHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			marshalledQuery, _ := json.Marshal(tt.query)
 			reader := bytes.NewReader(marshalledQuery)
-			recorder := TestRequest("/api/shorten", http.MethodPost, reader, db)
+			recorder := TestRequest("/api/shorten", http.MethodPost, reader, db, "someid")
 			response := recorder.Result()
 			defer response.Body.Close()
 			assert.Equal(t, tt.statusCode, response.StatusCode)
