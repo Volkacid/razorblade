@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
-	"sync"
 	"time"
 )
 
@@ -119,7 +118,22 @@ func (db *DB) FindDuplicate(ctx context.Context, value string) (string, error) {
 func (db *DB) DeleteURLs(urls []string, userID string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	wg := &sync.WaitGroup{}
+	batch := &pgx.Batch{}
+	for _, key := range urls {
+		batch.Queue("UPDATE urls SET deleted=TRUE WHERE short=$1 AND userid=$2", key, userID)
+	}
+	dbConn, err := db.dbPool.Acquire(ctx)
+	if err != nil {
+		fmt.Println("Cannot acquire a DB connection: ", err)
+	} else {
+		defer dbConn.Release()
+		bs := dbConn.SendBatch(ctx, batch)
+		_, err = bs.Exec()
+		if err != nil {
+			fmt.Println("Deletion error: ", err)
+		}
+	}
+	/*wg := &sync.WaitGroup{}
 	for _, key := range urls {
 		wg.Add(1)
 		go func(key string) {
@@ -136,5 +150,5 @@ func (db *DB) DeleteURLs(urls []string, userID string) {
 			wg.Done()
 		}(key)
 	}
-	wg.Wait()
+	wg.Wait()*/
 }
