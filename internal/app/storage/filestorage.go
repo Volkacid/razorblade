@@ -132,16 +132,7 @@ func (file *File) FindDuplicate(_ context.Context, value string) (string, error)
 	return "", NotFoundError()
 }
 
-func (file *File) DeleteURLs(urls []string, userID string) {
-	userURLs, err := file.GetValuesByID(context.Background(), userID)
-	if err != nil {
-		fmt.Println("Cannot get user URLs: ", err)
-		return
-	}
-	var userKeys string
-	for _, userVal := range userURLs {
-		userKeys += userVal.ShortURL
-	}
+func (file *File) DeleteURLs(urls []string) {
 	mutex.RLock()
 	input, err := ioutil.ReadFile(file.Path)
 	mutex.RUnlock()
@@ -150,9 +141,7 @@ func (file *File) DeleteURLs(urls []string, userID string) {
 		return
 	}
 	for _, key := range urls {
-		if strings.Contains(userKeys, key) {
-			input = bytes.Replace(input, []byte(key), []byte(key+":-:deleted:_:"), -1)
-		}
+		input = bytes.Replace(input, []byte(key), []byte(key+":-:deleted:_:"), -1)
 	}
 	mutex.Lock()
 	ioutil.WriteFile(file.Path, input, 0777)

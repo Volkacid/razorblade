@@ -13,7 +13,7 @@ type Storage interface {
 	SaveValue(ctx context.Context, key string, value string, userID string) error
 	BatchSave(ctx context.Context, values map[string]string, userID string) error
 	FindDuplicate(ctx context.Context, value string) (string, error)
-	DeleteURLs(urls []string, userID string)
+	DeleteURLs(urls []string)
 }
 
 type UserURL struct {

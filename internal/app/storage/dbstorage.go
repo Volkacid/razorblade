@@ -115,12 +115,12 @@ func (db *DB) FindDuplicate(ctx context.Context, value string) (string, error) {
 	return key, FoundDuplicateError()
 }
 
-func (db *DB) DeleteURLs(urls []string, userID string) {
+func (db *DB) DeleteURLs(urls []string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	batch := &pgx.Batch{}
 	for _, key := range urls {
-		batch.Queue("UPDATE urls SET deleted=TRUE WHERE short=$1 AND userid=$2", key, userID)
+		batch.Queue("UPDATE urls SET deleted=TRUE WHERE short=$1", key)
 	}
 	dbConn, err := db.dbPool.Acquire(ctx)
 	if err != nil {
@@ -133,22 +133,4 @@ func (db *DB) DeleteURLs(urls []string, userID string) {
 			fmt.Println("Deletion error: ", err)
 		}
 	}
-	/*wg := &sync.WaitGroup{}
-	for _, key := range urls {
-		wg.Add(1)
-		go func(key string) {
-			dbConn, err := db.dbPool.Acquire(ctx)
-			if err != nil {
-				fmt.Println("Cannot acquire a DB connection: ", err)
-			} else {
-				defer dbConn.Release()
-				_, err := dbConn.Exec(ctx, "UPDATE urls SET deleted=TRUE WHERE short=$1 AND userid=$2", key, userID)
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
-			wg.Done()
-		}(key)
-	}
-	wg.Wait()*/
 }

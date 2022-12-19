@@ -21,7 +21,7 @@ func (handlers *Handlers) DeleteUserURLs(writer http.ResponseWriter, request *ht
 		http.Error(writer, "Please make a correct request", http.StatusBadRequest)
 		return
 	}
-	go handlers.storage.DeleteURLs(urls, userID)
+	go handlers.deleteBuffer.AddKeys(urls, userID)
 
 	writer.WriteHeader(http.StatusAccepted)
 	writer.Write([]byte("Success!"))

@@ -72,12 +72,10 @@ func (db *dbMap) FindDuplicate(_ context.Context, value string) (string, error) 
 	return "", NotFoundError()
 }
 
-func (db *dbMap) DeleteURLs(urls []string, userID string) {
+func (db *dbMap) DeleteURLs(urls []string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	for _, key := range urls {
-		if db.db[key].UserID == userID {
-			db.db[key] = IDValue{OrigURL: "deleted"}
-		}
+		db.db[key] = IDValue{OrigURL: "deleted"}
 	}
 }
