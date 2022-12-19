@@ -25,7 +25,7 @@ func TestDeleteUserURLs(t *testing.T) {
 		response := request.Result()
 		defer response.Body.Close()
 		assert.Equal(t, http.StatusAccepted, response.StatusCode)
-		time.Sleep(1 * time.Second)
+		time.Sleep(3 * time.Second)
 		for _, key := range keys {
 			request = TestRequest("/"+key, http.MethodGet, nil, db, userID)
 			response = request.Result()
