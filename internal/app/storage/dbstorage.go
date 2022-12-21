@@ -60,17 +60,17 @@ func (db *DB) GetValuesByID(ctx context.Context, userID string) ([]UserURL, erro
 		if err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL, &isDeleted); err != nil {
 			return nil, err
 		}
-		if err = rows.Err(); err != nil {
-			return nil, err
-		}
 		if !isDeleted {
 			foundValues = append(foundValues, rowValue)
 		}
 	}
-	if len(foundValues) != 0 { //Necessary for correct http 204 status handling
+	if err = rows.Err(); err != nil {
+		return foundValues, err
+	}
+	if len(foundValues) != 0 {
 		return foundValues, nil
 	}
-	return foundValues, nil
+	return foundValues, NotFoundError()
 }
 
 func (db *DB) SaveValue(ctx context.Context, key string, value string, userID string) error {
@@ -118,19 +118,14 @@ func (db *DB) FindDuplicate(ctx context.Context, value string) (string, error) {
 func (db *DB) DeleteURLs(urls []string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	batch := &pgx.Batch{}
-	for _, key := range urls {
-		batch.Queue("UPDATE urls SET deleted=TRUE WHERE short=$1", key)
-	}
 	dbConn, err := db.dbPool.Acquire(ctx)
 	if err != nil {
 		fmt.Println("Cannot acquire a DB connection: ", err)
-	} else {
-		defer dbConn.Release()
-		bs := dbConn.SendBatch(ctx, batch)
-		_, err = bs.Exec()
-		if err != nil {
-			fmt.Println("Deletion error: ", err)
-		}
+		return
+	}
+	defer dbConn.Release()
+	_, err = dbConn.Query(ctx, "UPDATE urls SET deleted=TRUE WHERE short=ANY($1)", urls)
+	if err != nil {
+		fmt.Println("Deletion error: ", err)
 	}
 }

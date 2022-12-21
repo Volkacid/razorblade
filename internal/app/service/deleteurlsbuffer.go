@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/storage"
-	"strings"
 	"time"
 )
 
@@ -13,15 +12,19 @@ type URLsDeleteBuffer struct {
 	deleteChan chan string
 	keysBuffer []string
 	db         storage.Storage
+	ctx        context.Context
 }
 
-func NewDeleteBuffer(db storage.Storage) *URLsDeleteBuffer {
-	buf := &URLsDeleteBuffer{deleteChan: make(chan string), keysBuffer: make([]string, 0, config.DeleteBufferSize), db: db}
-	buf.newDeleteWorker()
+func NewDeleteBuffer(db storage.Storage, ctx context.Context) *URLsDeleteBuffer {
+	buf := &URLsDeleteBuffer{deleteChan: make(chan string),
+		keysBuffer: make([]string, 0, config.DeleteBufferSize),
+		db:         db,
+		ctx:        ctx}
+	buf.newDeletionWorker()
 	return buf
 }
 
-func (buffer *URLsDeleteBuffer) newDeleteWorker() {
+func (buffer *URLsDeleteBuffer) newDeletionWorker() {
 	go func() {
 		bufTicker := time.NewTicker(config.DeleteBufferClearTime * time.Second)
 		for {
@@ -33,23 +36,26 @@ func (buffer *URLsDeleteBuffer) newDeleteWorker() {
 				if len(buffer.keysBuffer) == config.DeleteBufferSize {
 					buffer.cleanBuffer()
 				}
+			case <-buffer.ctx.Done():
+				bufTicker.Stop()
+				buffer.cleanBuffer()
 			}
 		}
 	}()
 }
 
 func (buffer *URLsDeleteBuffer) AddKeys(keys []string, userID string) {
-	userURLs, err := buffer.db.GetValuesByID(context.Background(), userID)
+	userURLs, err := buffer.db.GetValuesByID(buffer.ctx, userID)
 	if err != nil {
 		fmt.Println("Cannot get user URLs: ", err)
 		return
 	}
-	var userKeys string
-	for _, userKey := range userURLs {
-		userKeys += userKey.ShortURL
+	userKeys := make(map[string]bool, len(userURLs))
+	for _, userVal := range userURLs {
+		userKeys[userVal.ShortURL] = true
 	}
 	for _, key := range keys {
-		if strings.Contains(userKeys, key) {
+		if userKeys[key] {
 			buffer.deleteChan <- key
 		}
 	}

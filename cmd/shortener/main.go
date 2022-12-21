@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/server"
 	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
@@ -11,9 +12,11 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	servConf := config.GetServerConfig()
 	db := storage.CreateStorage()
-	handlers := server.NewHandlersSet(db)
+	handlers := server.NewHandlersSet(db, ctx)
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {

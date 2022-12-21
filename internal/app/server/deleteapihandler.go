@@ -13,6 +13,7 @@ func (handlers *Handlers) DeleteUserURLs(writer http.ResponseWriter, request *ht
 		http.Error(writer, "Please make a correct request", http.StatusBadRequest)
 		return
 	}
+	defer request.Body.Close()
 	ctx := request.Context()
 	userID := ctx.Value(config.UserID{}).(string)
 
