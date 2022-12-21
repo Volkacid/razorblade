@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/storage"
+	"strings"
 	"time"
 )
 
@@ -52,6 +53,7 @@ func (buffer *URLsDeleteBuffer) AddKeys(keys []string, userID string) {
 	}
 	userKeys := make(map[string]bool, len(userURLs))
 	for _, userVal := range userURLs {
+		_, userVal.ShortURL, _ = strings.Cut(userVal.ShortURL, config.GetServerConfig().BaseURL+"/")
 		userKeys[userVal.ShortURL] = true
 	}
 	for _, key := range keys {

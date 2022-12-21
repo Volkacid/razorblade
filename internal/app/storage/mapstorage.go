@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/Volkacid/razorblade/internal/app/config"
 )
 
 type IDValue struct {
@@ -37,6 +38,7 @@ func (db *dbMap) GetValuesByID(_ context.Context, userID string) ([]UserURL, err
 	defer mutex.RUnlock()
 	for k, v := range db.db {
 		if v.UserID == userID && !v.IsDeleted {
+			k = config.GetServerConfig().BaseURL + "/" + k
 			foundValues = append(foundValues, UserURL{OriginalURL: v.OrigURL, ShortURL: k})
 		}
 	}

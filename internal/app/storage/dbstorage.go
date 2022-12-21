@@ -60,6 +60,7 @@ func (db *DB) GetValuesByID(ctx context.Context, userID string) ([]UserURL, erro
 		if err := rows.Scan(&rowValue.ShortURL, &rowValue.OriginalURL, &isDeleted); err != nil {
 			return nil, err
 		}
+		rowValue.ShortURL = config.GetServerConfig().BaseURL + "/" + rowValue.ShortURL
 		if !isDeleted {
 			foundValues = append(foundValues, rowValue)
 		}
