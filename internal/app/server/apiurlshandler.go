@@ -3,11 +3,9 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"net/http"
-	"time"
 )
 
 func (handlers *Handlers) UrlsAPIHandler(writer http.ResponseWriter, request *http.Request) {
@@ -24,8 +22,6 @@ func (handlers *Handlers) UrlsAPIHandler(writer http.ResponseWriter, request *ht
 		http.Error(writer, "", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Urls handler request at: ", time.Now())
-	writer.Header().Set("Content-Type", "application/json")
 	marshalledResponse, _ := json.Marshal(values)
 	writer.Write(marshalledResponse)
 }

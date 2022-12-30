@@ -5,11 +5,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
-	"math/rand"
+	"github.com/google/uuid"
 	"net/http"
-	"time"
 )
 
 func GetUserID(next http.Handler) http.Handler {
@@ -18,13 +16,12 @@ func GetUserID(next http.Handler) http.Handler {
 		if err != nil {
 			createdCookie := createCookie(createSign())
 			userID = createdCookie
-			fmt.Println("Created new cookie: ", userID.Value)
-			fmt.Println(time.Now())
 			http.SetCookie(writer, createdCookie)
 		} else {
 			sign := createSign()
-			userValue, _ := hex.DecodeString(userID.Value)
-			if !hmac.Equal(sign, userValue[:len(userValue)-10]) {
+			stringValue := userID.Value[:len(userID.Value)-36] //without UUID
+			userValue, _ := hex.DecodeString(stringValue)
+			if !hmac.Equal(sign, userValue) {
 				newCookie := createCookie(sign)
 				userID = newCookie
 				http.SetCookie(writer, newCookie)
@@ -37,10 +34,10 @@ func GetUserID(next http.Handler) http.Handler {
 }
 
 func createCookie(sign []byte) *http.Cookie {
-	salt := make([]byte, 10)
-	rand.Read(salt)
-	sign = append(sign, salt...)
-	return &http.Cookie{Name: "UserID", Value: hex.EncodeToString(sign)}
+	id := uuid.New()
+	val := hex.EncodeToString(sign)
+	val += id.String()
+	return &http.Cookie{Name: "UserID", Value: val}
 }
 
 func createSign() []byte {

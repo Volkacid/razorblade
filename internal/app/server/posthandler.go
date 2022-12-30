@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
@@ -10,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 func (handlers *Handlers) PostHandler(writer http.ResponseWriter, request *http.Request) {
@@ -48,7 +46,6 @@ func (handlers *Handlers) PostHandler(writer http.ResponseWriter, request *http.
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Post request at: ", time.Now(), foundStr)
 	writer.WriteHeader(http.StatusCreated)
 	writer.Write([]byte(handlers.servConf.BaseURL + "/" + foundStr))
 }
