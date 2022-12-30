@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"math/rand"
 	"net/http"
@@ -16,6 +17,7 @@ func GetUserID(next http.Handler) http.Handler {
 		if err != nil {
 			createdCookie := createCookie(createSign())
 			userID = createdCookie
+			fmt.Println("Created new cookie: ", userID.Value)
 			http.SetCookie(writer, createdCookie)
 		} else {
 			sign := createSign()
