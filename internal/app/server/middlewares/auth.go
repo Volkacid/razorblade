@@ -9,6 +9,7 @@ import (
 	"github.com/Volkacid/razorblade/internal/app/config"
 	"math/rand"
 	"net/http"
+	"time"
 )
 
 func GetUserID(next http.Handler) http.Handler {
@@ -18,6 +19,7 @@ func GetUserID(next http.Handler) http.Handler {
 			createdCookie := createCookie(createSign())
 			userID = createdCookie
 			fmt.Println("Created new cookie: ", userID.Value)
+			fmt.Println(time.Now())
 			http.SetCookie(writer, createdCookie)
 		} else {
 			sign := createSign()
