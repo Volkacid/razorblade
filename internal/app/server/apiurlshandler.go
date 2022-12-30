@@ -11,6 +11,7 @@ import (
 func (handlers *Handlers) UrlsAPIHandler(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 	userID := ctx.Value(config.UserID{}).(string)
+	writer.Header().Set("Content-Type", "application/json")
 
 	values, err := handlers.storage.GetValuesByID(ctx, userID)
 	if err != nil {

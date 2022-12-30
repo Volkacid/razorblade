@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -40,6 +41,7 @@ func TestUrlsAPIHandler(t *testing.T) {
 			db.SaveValue(context.Background(), tt.key, tt.query, "correctid")
 			request := TestRequest("/api/user/urls", http.MethodGet, nil, db, tt.UserID)
 			response := request.Result()
+			fmt.Println(response)
 			defer response.Body.Close()
 			assert.Equal(t, tt.statusCode, response.StatusCode)
 			assert.Equal(t, tt.header, response.Header.Get("Content-Type"))
