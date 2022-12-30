@@ -48,7 +48,7 @@ func (handlers *Handlers) PostHandler(writer http.ResponseWriter, request *http.
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Post request at: ", time.Now())
+	fmt.Println("Post request at: ", time.Now(), foundStr)
 	writer.WriteHeader(http.StatusCreated)
 	writer.Write([]byte(handlers.servConf.BaseURL + "/" + foundStr))
 }
