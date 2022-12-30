@@ -8,7 +8,9 @@ import (
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
 	"log"
+	"math/rand"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -17,6 +19,7 @@ func main() {
 	servConf := config.GetServerConfig()
 	db := storage.CreateStorage()
 	handlers := server.NewHandlersSet(db, ctx)
+	rand.Seed(time.Now().Unix())
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {

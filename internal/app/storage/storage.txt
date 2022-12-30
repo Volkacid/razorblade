@@ -1,3 +1,0 @@
-7f6c2aa:-:https://yandex.by:_:8ff7ba499fe48b6d1f1ab65eb1223a610d39cd6c0e28200ce813f55fdba5a3be52fdfc072182654f163f
-8bfbd42:-:https://google.by:_:8ff7ba499fe48b6d1f1ab65eb1223a610d39cd6c0e28200ce813f55fdba5a3be52fdfc072182654f163f
-275c0e8:-:https://microsoft.com:_:8ff7ba499fe48b6d1f1ab65eb1223a610d39cd6c0e28200ce813f55fdba5a3be52fdfc072182654f163f

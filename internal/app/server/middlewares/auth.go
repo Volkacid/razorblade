@@ -17,7 +17,6 @@ func GetUserID(next http.Handler) http.Handler {
 		if err != nil {
 			createdCookie := createCookie(createSign())
 			userID = createdCookie
-			fmt.Println("Created new cookie: ", userID.Value)
 			http.SetCookie(writer, createdCookie)
 		} else {
 			sign := createSign()
@@ -37,6 +36,7 @@ func GetUserID(next http.Handler) http.Handler {
 func createCookie(sign []byte) *http.Cookie {
 	salt := make([]byte, 10)
 	rand.Read(salt)
+	fmt.Println(salt)
 	sign = append(sign, salt...)
 	return &http.Cookie{Name: "UserID", Value: hex.EncodeToString(sign)}
 }
