@@ -12,33 +12,35 @@ import (
 
 func GetUserID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		userIP := request.RemoteAddr
-		//userIP, _, _ = strings.Cut(userIP, ":")
-		sign := createSign(userIP)
 		userID, err := request.Cookie("UserID")
 		if err != nil {
-			http.SetCookie(writer, createCookie(sign))
+			createdCookie := createCookie(createSign())
+			userID = createdCookie
+			http.SetCookie(writer, createdCookie)
 		} else {
+			sign := createSign()
 			userValue, _ := hex.DecodeString(userID.Value)
-			if !hmac.Equal(sign, userValue[:len(userValue)-5]) {
-				http.SetCookie(writer, createCookie(sign))
+			if !hmac.Equal(sign, userValue[:len(userValue)-10]) {
+				newCookie := createCookie(sign)
+				userID = newCookie
+				http.SetCookie(writer, newCookie)
 			}
 		}
-		ctx := context.WithValue(request.Context(), config.UserID{}, hex.EncodeToString(sign))
+		ctx := context.WithValue(request.Context(), config.UserID{}, userID.Value)
 		next.ServeHTTP(writer, request.WithContext(ctx))
 	})
 
 }
 
 func createCookie(sign []byte) *http.Cookie {
-	bytes := make([]byte, 5)
-	rand.Read(bytes)
-	sign = append(sign, bytes...)
+	salt := make([]byte, 10)
+	rand.Read(salt)
+	sign = append(sign, salt...)
 	return &http.Cookie{Name: "UserID", Value: hex.EncodeToString(sign)}
 }
 
-func createSign(userIP string) []byte {
+func createSign() []byte {
 	hash := hmac.New(sha256.New, []byte(config.SecretKey))
-	hash.Write([]byte(userIP))
+	hash.Write([]byte("UserIdentificator"))
 	return hash.Sum(nil)
 }
