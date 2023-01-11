@@ -30,7 +30,7 @@ func TestPostHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			bodyReader := strings.NewReader(tt.query)
-			recorder := TestRequest("/", http.MethodPost, bodyReader, db)
+			recorder := TestRequest("/", http.MethodPost, bodyReader, db, "someid")
 			response := recorder.Result()
 			defer response.Body.Close()
 			assert.Equal(t, tt.statusCode, response.StatusCode)
