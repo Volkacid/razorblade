@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package razorblade;
+
+option go_package = "github.com/Volkacid/razorblade/internal/app/grpc";
+
+message GetValueRequest {
+  string key = 1;
+}
+
+message GetValueResponse {
+  string value = 1;
+}
+
+message GetValuesByIDRequest {
+  string userID = 1;
+}
+
+message GetValuesByIDResponse {
+  repeated string foundValues = 1;
+}
+
+message SaveValueRequest {
+  string value = 1;
+}
+
+message SaveValueResponse {
+  string key = 1;
+}
+
+message DeleteURLsRequest {
+  repeated string urls = 1;
+}
+
+message DeleteURLsResponse {
+}
+
+
+service Users {
+  rpc GetValue(GetValueRequest) returns (GetValueResponse);
+  rpc GetValuesByID(GetValuesByIDRequest) returns (GetValuesByIDResponse);
+  rpc SaveValue(SaveValueRequest) returns (SaveValueResponse);
+  rpc DeleteURLs(DeleteURLsRequest) returns (DeleteURLsResponse);
+}
