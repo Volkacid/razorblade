@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -18,194 +19,194 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// UsersClient is the client API for Users service.
+// RazorbladeServiceClient is the client API for RazorbladeService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type UsersClient interface {
-	GetValue(ctx context.Context, in *GetValueRequest, opts ...grpc.CallOption) (*GetValueResponse, error)
-	GetValuesByID(ctx context.Context, in *GetValuesByIDRequest, opts ...grpc.CallOption) (*GetValuesByIDResponse, error)
-	SaveValue(ctx context.Context, in *SaveValueRequest, opts ...grpc.CallOption) (*SaveValueResponse, error)
-	DeleteURLs(ctx context.Context, in *DeleteURLsRequest, opts ...grpc.CallOption) (*DeleteURLsResponse, error)
+type RazorbladeServiceClient interface {
+	GetOriginalURL(ctx context.Context, in *GetOriginalURLRequest, opts ...grpc.CallOption) (*GetOriginalURLResponse, error)
+	ListURLsByUserID(ctx context.Context, in *ListURLsByUserIDRequest, opts ...grpc.CallOption) (*ListURLsByUserIDResponse, error)
+	CreateShortURL(ctx context.Context, in *CreateShortURLRequest, opts ...grpc.CallOption) (*CreateShortURLResponse, error)
+	DeleteShortURLs(ctx context.Context, in *DeleteShortURLsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type usersClient struct {
+type razorbladeServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewUsersClient(cc grpc.ClientConnInterface) UsersClient {
-	return &usersClient{cc}
+func NewRazorbladeServiceClient(cc grpc.ClientConnInterface) RazorbladeServiceClient {
+	return &razorbladeServiceClient{cc}
 }
 
-func (c *usersClient) GetValue(ctx context.Context, in *GetValueRequest, opts ...grpc.CallOption) (*GetValueResponse, error) {
-	out := new(GetValueResponse)
-	err := c.cc.Invoke(ctx, "/razorblade.Users/GetValue", in, out, opts...)
+func (c *razorbladeServiceClient) GetOriginalURL(ctx context.Context, in *GetOriginalURLRequest, opts ...grpc.CallOption) (*GetOriginalURLResponse, error) {
+	out := new(GetOriginalURLResponse)
+	err := c.cc.Invoke(ctx, "/razorblade.RazorbladeService/GetOriginalURL", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *usersClient) GetValuesByID(ctx context.Context, in *GetValuesByIDRequest, opts ...grpc.CallOption) (*GetValuesByIDResponse, error) {
-	out := new(GetValuesByIDResponse)
-	err := c.cc.Invoke(ctx, "/razorblade.Users/GetValuesByID", in, out, opts...)
+func (c *razorbladeServiceClient) ListURLsByUserID(ctx context.Context, in *ListURLsByUserIDRequest, opts ...grpc.CallOption) (*ListURLsByUserIDResponse, error) {
+	out := new(ListURLsByUserIDResponse)
+	err := c.cc.Invoke(ctx, "/razorblade.RazorbladeService/ListURLsByUserID", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *usersClient) SaveValue(ctx context.Context, in *SaveValueRequest, opts ...grpc.CallOption) (*SaveValueResponse, error) {
-	out := new(SaveValueResponse)
-	err := c.cc.Invoke(ctx, "/razorblade.Users/SaveValue", in, out, opts...)
+func (c *razorbladeServiceClient) CreateShortURL(ctx context.Context, in *CreateShortURLRequest, opts ...grpc.CallOption) (*CreateShortURLResponse, error) {
+	out := new(CreateShortURLResponse)
+	err := c.cc.Invoke(ctx, "/razorblade.RazorbladeService/CreateShortURL", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *usersClient) DeleteURLs(ctx context.Context, in *DeleteURLsRequest, opts ...grpc.CallOption) (*DeleteURLsResponse, error) {
-	out := new(DeleteURLsResponse)
-	err := c.cc.Invoke(ctx, "/razorblade.Users/DeleteURLs", in, out, opts...)
+func (c *razorbladeServiceClient) DeleteShortURLs(ctx context.Context, in *DeleteShortURLsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/razorblade.RazorbladeService/DeleteShortURLs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// UsersServer is the server API for Users service.
-// All implementations must embed UnimplementedUsersServer
+// RazorbladeServiceServer is the server API for RazorbladeService service.
+// All implementations must embed UnimplementedRazorbladeServiceServer
 // for forward compatibility
-type UsersServer interface {
-	GetValue(context.Context, *GetValueRequest) (*GetValueResponse, error)
-	GetValuesByID(context.Context, *GetValuesByIDRequest) (*GetValuesByIDResponse, error)
-	SaveValue(context.Context, *SaveValueRequest) (*SaveValueResponse, error)
-	DeleteURLs(context.Context, *DeleteURLsRequest) (*DeleteURLsResponse, error)
-	mustEmbedUnimplementedUsersServer()
+type RazorbladeServiceServer interface {
+	GetOriginalURL(context.Context, *GetOriginalURLRequest) (*GetOriginalURLResponse, error)
+	ListURLsByUserID(context.Context, *ListURLsByUserIDRequest) (*ListURLsByUserIDResponse, error)
+	CreateShortURL(context.Context, *CreateShortURLRequest) (*CreateShortURLResponse, error)
+	DeleteShortURLs(context.Context, *DeleteShortURLsRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedRazorbladeServiceServer()
 }
 
-// UnimplementedUsersServer must be embedded to have forward compatible implementations.
-type UnimplementedUsersServer struct {
+// UnimplementedRazorbladeServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedRazorbladeServiceServer struct {
 }
 
-func (UnimplementedUsersServer) GetValue(context.Context, *GetValueRequest) (*GetValueResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetValue not implemented")
+func (UnimplementedRazorbladeServiceServer) GetOriginalURL(context.Context, *GetOriginalURLRequest) (*GetOriginalURLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOriginalURL not implemented")
 }
-func (UnimplementedUsersServer) GetValuesByID(context.Context, *GetValuesByIDRequest) (*GetValuesByIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetValuesByID not implemented")
+func (UnimplementedRazorbladeServiceServer) ListURLsByUserID(context.Context, *ListURLsByUserIDRequest) (*ListURLsByUserIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListURLsByUserID not implemented")
 }
-func (UnimplementedUsersServer) SaveValue(context.Context, *SaveValueRequest) (*SaveValueResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SaveValue not implemented")
+func (UnimplementedRazorbladeServiceServer) CreateShortURL(context.Context, *CreateShortURLRequest) (*CreateShortURLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateShortURL not implemented")
 }
-func (UnimplementedUsersServer) DeleteURLs(context.Context, *DeleteURLsRequest) (*DeleteURLsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteURLs not implemented")
+func (UnimplementedRazorbladeServiceServer) DeleteShortURLs(context.Context, *DeleteShortURLsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteShortURLs not implemented")
 }
-func (UnimplementedUsersServer) mustEmbedUnimplementedUsersServer() {}
+func (UnimplementedRazorbladeServiceServer) mustEmbedUnimplementedRazorbladeServiceServer() {}
 
-// UnsafeUsersServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to UsersServer will
+// UnsafeRazorbladeServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RazorbladeServiceServer will
 // result in compilation errors.
-type UnsafeUsersServer interface {
-	mustEmbedUnimplementedUsersServer()
+type UnsafeRazorbladeServiceServer interface {
+	mustEmbedUnimplementedRazorbladeServiceServer()
 }
 
-func RegisterUsersServer(s grpc.ServiceRegistrar, srv UsersServer) {
-	s.RegisterService(&Users_ServiceDesc, srv)
+func RegisterRazorbladeServiceServer(s grpc.ServiceRegistrar, srv RazorbladeServiceServer) {
+	s.RegisterService(&RazorbladeService_ServiceDesc, srv)
 }
 
-func _Users_GetValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetValueRequest)
+func _RazorbladeService_GetOriginalURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOriginalURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UsersServer).GetValue(ctx, in)
+		return srv.(RazorbladeServiceServer).GetOriginalURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/razorblade.Users/GetValue",
+		FullMethod: "/razorblade.RazorbladeService/GetOriginalURL",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).GetValue(ctx, req.(*GetValueRequest))
+		return srv.(RazorbladeServiceServer).GetOriginalURL(ctx, req.(*GetOriginalURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Users_GetValuesByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetValuesByIDRequest)
+func _RazorbladeService_ListURLsByUserID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListURLsByUserIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UsersServer).GetValuesByID(ctx, in)
+		return srv.(RazorbladeServiceServer).ListURLsByUserID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/razorblade.Users/GetValuesByID",
+		FullMethod: "/razorblade.RazorbladeService/ListURLsByUserID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).GetValuesByID(ctx, req.(*GetValuesByIDRequest))
+		return srv.(RazorbladeServiceServer).ListURLsByUserID(ctx, req.(*ListURLsByUserIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Users_SaveValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SaveValueRequest)
+func _RazorbladeService_CreateShortURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateShortURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UsersServer).SaveValue(ctx, in)
+		return srv.(RazorbladeServiceServer).CreateShortURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/razorblade.Users/SaveValue",
+		FullMethod: "/razorblade.RazorbladeService/CreateShortURL",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).SaveValue(ctx, req.(*SaveValueRequest))
+		return srv.(RazorbladeServiceServer).CreateShortURL(ctx, req.(*CreateShortURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Users_DeleteURLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteURLsRequest)
+func _RazorbladeService_DeleteShortURLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteShortURLsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UsersServer).DeleteURLs(ctx, in)
+		return srv.(RazorbladeServiceServer).DeleteShortURLs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/razorblade.Users/DeleteURLs",
+		FullMethod: "/razorblade.RazorbladeService/DeleteShortURLs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).DeleteURLs(ctx, req.(*DeleteURLsRequest))
+		return srv.(RazorbladeServiceServer).DeleteShortURLs(ctx, req.(*DeleteShortURLsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Users_ServiceDesc is the grpc.ServiceDesc for Users service.
+// RazorbladeService_ServiceDesc is the grpc.ServiceDesc for RazorbladeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Users_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "razorblade.Users",
-	HandlerType: (*UsersServer)(nil),
+var RazorbladeService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "razorblade.RazorbladeService",
+	HandlerType: (*RazorbladeServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetValue",
-			Handler:    _Users_GetValue_Handler,
+			MethodName: "GetOriginalURL",
+			Handler:    _RazorbladeService_GetOriginalURL_Handler,
 		},
 		{
-			MethodName: "GetValuesByID",
-			Handler:    _Users_GetValuesByID_Handler,
+			MethodName: "ListURLsByUserID",
+			Handler:    _RazorbladeService_ListURLsByUserID_Handler,
 		},
 		{
-			MethodName: "SaveValue",
-			Handler:    _Users_SaveValue_Handler,
+			MethodName: "CreateShortURL",
+			Handler:    _RazorbladeService_CreateShortURL_Handler,
 		},
 		{
-			MethodName: "DeleteURLs",
-			Handler:    _Users_DeleteURLs_Handler,
+			MethodName: "DeleteShortURLs",
+			Handler:    _RazorbladeService_DeleteShortURLs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

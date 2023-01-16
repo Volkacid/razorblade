@@ -1,44 +1,49 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 package razorblade;
 
 option go_package = "github.com/Volkacid/razorblade/internal/app/grpc";
 
-message GetValueRequest {
+message UserURL {
+  string key = 1;
+  string original_url = 2;
+  string user_id = 3;
+}
+
+message GetOriginalURLRequest {
   string key = 1;
 }
 
-message GetValueResponse {
-  string value = 1;
+message GetOriginalURLResponse {
+  string short_url = 1;
 }
 
-message GetValuesByIDRequest {
-  string userID = 1;
+message ListURLsByUserIDRequest {
+  string user_id = 1;
 }
 
-message GetValuesByIDResponse {
-  repeated string foundValues = 1;
+message ListURLsByUserIDResponse {
+  repeated UserURL user_urls = 1;
 }
 
-message SaveValueRequest {
-  string value = 1;
+message CreateShortURLRequest {
+  UserURL original_url = 1;
 }
 
-message SaveValueResponse {
-  string key = 1;
+message CreateShortURLResponse {
+  UserURL shortened_url = 1;
 }
 
-message DeleteURLsRequest {
-  repeated string urls = 1;
-}
-
-message DeleteURLsResponse {
+message DeleteShortURLsRequest {
+  repeated string keys = 1;
 }
 
 
-service Users {
-  rpc GetValue(GetValueRequest) returns (GetValueResponse);
-  rpc GetValuesByID(GetValuesByIDRequest) returns (GetValuesByIDResponse);
-  rpc SaveValue(SaveValueRequest) returns (SaveValueResponse);
-  rpc DeleteURLs(DeleteURLsRequest) returns (DeleteURLsResponse);
+service RazorbladeService {
+  rpc GetOriginalURL(GetOriginalURLRequest) returns (GetOriginalURLResponse);
+  rpc ListURLsByUserID(ListURLsByUserIDRequest) returns (ListURLsByUserIDResponse);
+  rpc CreateShortURL(CreateShortURLRequest) returns (CreateShortURLResponse);
+  rpc DeleteShortURLs(DeleteShortURLsRequest) returns (google.protobuf.Empty);
 }

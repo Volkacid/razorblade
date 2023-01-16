@@ -12,7 +12,7 @@ import (
 )
 
 func TestRequest(query, method string, bodyReader io.Reader, db storage.Storage, userID string) *httptest.ResponseRecorder {
-	handlers := NewHandlersSet(db, context.Background())
+	handlers := NewHandlersSet(context.Background(), db)
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
