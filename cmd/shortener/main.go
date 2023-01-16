@@ -23,9 +23,9 @@ func main() {
 	servConf := config.GetServerConfig()
 	db := storage.CreateStorage()
 
-	go gRPCService(db, ctx)
+	go gRPCService(ctx, db)
 
-	handlers := server.NewHandlersSet(db, ctx)
+	handlers := server.NewHandlersSet(ctx, db)
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
@@ -43,15 +43,19 @@ func main() {
 	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
 }
 
-func gRPCService(db storage.Storage, ctx context.Context) {
+func gRPCService(ctx context.Context, db storage.Storage) {
 	gRPCListener, err := net.Listen("tcp", ":3200")
 	if err != nil {
 		log.Fatal(err)
 	}
-	rpcServer := grpc.NewServer()
-	pb.RegisterUsersServer(rpcServer, &server2.RazorbladeService{DB: db, DeleteBuffer: service.NewDeleteBuffer(db, ctx)})
+	rpcServer := grpc.NewServer(withServerUnaryInterceptor())
+	pb.RegisterRazorbladeServiceServer(rpcServer, &server2.RazorbladeService{DB: db, DeleteBuffer: service.NewDeleteBuffer(ctx, db)})
 	fmt.Println("Starting a gRPC server")
 	if err = rpcServer.Serve(gRPCListener); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func withServerUnaryInterceptor() grpc.ServerOption {
+	return grpc.UnaryInterceptor(server2.RazorbladeInterceptor)
 }

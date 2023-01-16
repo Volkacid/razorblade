@@ -3,23 +3,23 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	pb "github.com/Volkacid/razorblade/internal/app/grpc/proto"
 	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type RazorbladeService struct {
-	pb.UnimplementedUsersServer
+	pb.UnimplementedRazorbladeServiceServer
 	DB           storage.Storage
 	DeleteBuffer *service.URLsDeleteBuffer
 }
 
-func (rbs *RazorbladeService) GetValue(ctx context.Context, in *pb.GetValueRequest) (*pb.GetValueResponse, error) {
-	var response pb.GetValueResponse
+func (rbs *RazorbladeService) GetOriginalURL(ctx context.Context, in *pb.GetOriginalURLRequest) (*pb.GetOriginalURLResponse, error) {
+	var response pb.GetOriginalURLResponse
 	value, err := rbs.DB.GetValue(ctx, in.Key)
 	if err != nil {
 		var nfError *storage.NFError
@@ -32,13 +32,13 @@ func (rbs *RazorbladeService) GetValue(ctx context.Context, in *pb.GetValueReque
 		}
 		return &response, status.Error(codes.Internal, "Server error")
 	}
-	response.Value = value
+	response.ShortUrl = value
 	return &response, nil
 }
 
-func (rbs *RazorbladeService) GetValuesByID(ctx context.Context, in *pb.GetValuesByIDRequest) (*pb.GetValuesByIDResponse, error) {
-	var response pb.GetValuesByIDResponse
-	userValues, err := rbs.DB.GetValuesByID(ctx, in.UserID)
+func (rbs *RazorbladeService) ListURLsByUserID(ctx context.Context, in *pb.ListURLsByUserIDRequest) (*pb.ListURLsByUserIDResponse, error) {
+	var response pb.ListURLsByUserIDResponse
+	userValues, err := rbs.DB.GetValuesByID(ctx, in.UserId)
 	if err != nil {
 		var nfError *storage.NFError
 		if errors.As(err, &nfError) {
@@ -46,46 +46,28 @@ func (rbs *RazorbladeService) GetValuesByID(ctx context.Context, in *pb.GetValue
 		}
 		return &response, status.Error(codes.Internal, "Server error")
 	}
-	strVal := make([]string, len(userValues))
+	pbVal := make([]*pb.UserURL, len(userValues))
 	for i, v := range userValues {
-		strVal[i] = fmt.Sprintf("ShortURL: %v, OrigURL: %v", v.ShortURL, v.OriginalURL)
+		pbVal[i] = &pb.UserURL{Key: v.ShortURL, OriginalUrl: v.OriginalURL, UserId: in.UserId}
 	}
-	response.FoundValues = strVal
+	response.UserUrls = pbVal
 	return &response, nil
 }
 
-func (rbs *RazorbladeService) SaveValue(ctx context.Context, in *pb.SaveValueRequest) (*pb.SaveValueResponse, error) {
-	var response pb.SaveValueResponse
-	userID, err := getUserID(ctx)
-	if err != nil {
-		return &response, status.Error(codes.PermissionDenied, "UserID not provided")
-	}
-	key := service.GenerateShortString(in.Value)
-	err = rbs.DB.SaveValue(ctx, key, in.Value, userID)
+func (rbs *RazorbladeService) CreateShortURL(ctx context.Context, in *pb.CreateShortURLRequest) (*pb.CreateShortURLResponse, error) {
+	var response pb.CreateShortURLResponse
+	userID := metadata.ValueFromIncomingContext(ctx, "userid")
+	key := service.GenerateShortString(in.OriginalUrl.OriginalUrl)
+	err := rbs.DB.SaveValue(ctx, key, in.OriginalUrl.OriginalUrl, userID[0])
 	if err != nil {
 		return &response, status.Error(codes.Internal, "Server error")
 	}
-	response.Key = key
+	response.ShortenedUrl = &pb.UserURL{UserId: userID[0], OriginalUrl: in.OriginalUrl.OriginalUrl, Key: key}
 	return &response, nil
 }
 
-func (rbs *RazorbladeService) DeleteURLs(ctx context.Context, in *pb.DeleteURLsRequest) (*pb.DeleteURLsResponse, error) {
-	var response pb.DeleteURLsResponse
-	userID, err := getUserID(ctx)
-	if err != nil {
-		return &response, status.Error(codes.PermissionDenied, "UserID not provided")
-	}
-	go rbs.DeleteBuffer.AddKeys(in.Urls, userID)
-	return &response, nil
-}
-
-func getUserID(ctx context.Context) (string, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		idArr := md.Get("UserID")
-		if len(idArr) > 0 {
-			return idArr[0], nil
-		}
-	}
-	return "", errors.New("not found")
+func (rbs *RazorbladeService) DeleteShortURLs(ctx context.Context, in *pb.DeleteShortURLsRequest) (*emptypb.Empty, error) {
+	userID := metadata.ValueFromIncomingContext(ctx, "userid")
+	go rbs.DeleteBuffer.AddKeys(in.Keys, userID[0])
+	return &emptypb.Empty{}, nil
 }

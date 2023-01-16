@@ -13,6 +13,6 @@ type Handlers struct {
 	deleteBuffer *service.URLsDeleteBuffer
 }
 
-func NewHandlersSet(storage storage.Storage, ctx context.Context) *Handlers {
-	return &Handlers{storage: storage, servConf: config.GetServerConfig(), deleteBuffer: service.NewDeleteBuffer(storage, ctx)}
+func NewHandlersSet(ctx context.Context, storage storage.Storage) *Handlers {
+	return &Handlers{storage: storage, servConf: config.GetServerConfig(), deleteBuffer: service.NewDeleteBuffer(ctx, storage)}
 }
