@@ -1,34 +1,21 @@
-# go-musthave-shortener-tpl
+# Razorblade URL shortener
 
-Шаблон репозитория для практического трек "Веб-разработка на Go"
+This is a small educational project that shows how easy it is to run an http server using Go.
 
-# Начало работы
+## Some features
 
-1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере
-2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` - адрес вашего репозитория на Github без
-   префикса `https://`) для создания модуля
+This shortener has several endpoints:
+- **/** - there is a shortening form 
+- **/ping** - checks PostgreSQL database connection
+- **/api/user/urls** - returns all links shortened by the current user
+- **/api/shorten** - accepts a link to shorten in JSON format
+- **/api/shorten/batch** - accepts a batch of links to shorten in JSON format
+- **DELETE /api/user/urls** - accepts a batch of links to delete also in JSON format
 
-# Обновление шаблона
+The gRPC API is also available.
 
-Чтобы иметь возможность получать обновления автотестов и других частей шаблона выполните следующую команды:
+## How to use 
 
-```
-git remote add -m main template https://github.com/yandex-praktikum/go-musthave-shortener-tpl.git
-```
+Just run /cmd/shortener/main.go
 
-Для обновления кода автотестов выполните команду:
-
-```
-git fetch template && git checkout template/main .github
-```
-
-затем добавьте полученые изменения в свой репозиторий.
-
-# Запуск автотестов
-
-Для успешного запуска автотестов вам необходимо давать вашим веткам названия вида `iter<number>`, где `<number>` -
-порядковый номер итерации.
-
-Например в ветке с названием `iter4` запустятся автотесты для итераций с первой по четвертую.
-
-При мерже ветки с итерацией в основную ветку (`main`) будут запускаться все автотесты.
+It is recommended to have a PostgreSQL database. Just specify its address in internal/app/config/config.go, the required table will be created automatically. However, it is possible to work without it. In this case, the storage.txt file will be used.

@@ -8,8 +8,9 @@ import (
 )
 
 type Handlers struct {
-	storage      storage.Storage
-	servConf     *config.ServerConfig
+	storage  storage.Storage
+	servConf *config.ServerConfig
+	//URLs are placed in a buffer, from which they are removed every three seconds or when the buffer overflows
 	deleteBuffer *service.URLsDeleteBuffer
 }
 

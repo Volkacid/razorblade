@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 )
 
+// TestRequest For test purposes only
 func TestRequest(query, method string, bodyReader io.Reader, db storage.Storage, userID string) *httptest.ResponseRecorder {
 	handlers := NewHandlersSet(context.Background(), db)
 

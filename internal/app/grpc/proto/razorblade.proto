@@ -6,6 +6,7 @@ package razorblade;
 
 option go_package = "github.com/Volkacid/razorblade/internal/app/grpc";
 
+//More convenient structure
 message UserURL {
   string key = 1;
   string original_url = 2;

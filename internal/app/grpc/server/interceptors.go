@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// RazorbladeInterceptor Needed to check if UserID exists
 func RazorbladeInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

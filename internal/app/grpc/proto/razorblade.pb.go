@@ -21,6 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// More convenient structure
 type UserURL struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
