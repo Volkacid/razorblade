@@ -2,12 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/Volkacid/razorblade/internal/app/config"
+	pb "github.com/Volkacid/razorblade/internal/app/grpc/proto"
+	server2 "github.com/Volkacid/razorblade/internal/app/grpc/server"
 	"github.com/Volkacid/razorblade/internal/app/server"
 	"github.com/Volkacid/razorblade/internal/app/server/middlewares"
+	"github.com/Volkacid/razorblade/internal/app/service"
 	"github.com/Volkacid/razorblade/internal/app/storage"
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc"
 	"log"
+	"net"
 	"net/http"
 )
 
@@ -16,7 +22,10 @@ func main() {
 	defer cancel()
 	servConf := config.GetServerConfig()
 	db := storage.CreateStorage()
-	handlers := server.NewHandlersSet(db, ctx)
+
+	go gRPCService(ctx, db)
+
+	handlers := server.NewHandlersSet(ctx, db)
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
@@ -32,4 +41,21 @@ func main() {
 		router.Delete("/api/user/urls", handlers.DeleteUserURLs)
 	})
 	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
+}
+
+func gRPCService(ctx context.Context, db storage.Storage) {
+	gRPCListener, err := net.Listen("tcp", ":3200")
+	if err != nil {
+		log.Fatal(err)
+	}
+	rpcServer := grpc.NewServer(withServerUnaryInterceptor())
+	pb.RegisterRazorbladeServiceServer(rpcServer, &server2.RazorbladeService{DB: db, DeleteBuffer: service.NewDeleteBuffer(ctx, db)})
+	fmt.Println("Starting a gRPC server")
+	if err = rpcServer.Serve(gRPCListener); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func withServerUnaryInterceptor() grpc.ServerOption {
+	return grpc.UnaryInterceptor(server2.RazorbladeInterceptor)
 }

@@ -16,7 +16,7 @@ type URLsDeleteBuffer struct {
 	ctx        context.Context
 }
 
-func NewDeleteBuffer(db storage.Storage, ctx context.Context) *URLsDeleteBuffer {
+func NewDeleteBuffer(ctx context.Context, db storage.Storage) *URLsDeleteBuffer {
 	buf := &URLsDeleteBuffer{deleteChan: make(chan string),
 		keysBuffer: make([]string, 0, config.DeleteBufferSize),
 		db:         db,
