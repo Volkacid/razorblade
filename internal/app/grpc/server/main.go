@@ -66,6 +66,7 @@ func (rbs *RazorbladeService) CreateShortURL(ctx context.Context, in *pb.CreateS
 	return &response, nil
 }
 
+// DeleteShortURLs URLs are placed in a buffer, from which they are removed every three seconds or when the buffer overflows
 func (rbs *RazorbladeService) DeleteShortURLs(ctx context.Context, in *pb.DeleteShortURLsRequest) (*emptypb.Empty, error) {
 	userID := metadata.ValueFromIncomingContext(ctx, "userid")
 	go rbs.DeleteBuffer.AddKeys(in.Keys, userID[0])

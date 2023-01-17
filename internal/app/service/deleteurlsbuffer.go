@@ -48,7 +48,7 @@ func (buffer *URLsDeleteBuffer) newDeletionWorker() {
 func (buffer *URLsDeleteBuffer) AddKeys(keys []string, userID string) {
 	userURLs, err := buffer.db.GetValuesByID(buffer.ctx, userID)
 	if err != nil {
-		fmt.Println("Cannot get user URLs: ", err)
+		fmt.Println("Cannot get URLs: ", err)
 		return
 	}
 	userKeys := make(map[string]bool, len(userURLs))

@@ -21,10 +21,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	servConf := config.GetServerConfig()
+	//Storage initializing. See storage configuration at internal/app/config/config.go
 	db := storage.CreateStorage()
 
 	go gRPCService(ctx, db)
 
+	//Initiating an object to access handlers
 	handlers := server.NewHandlersSet(ctx, db)
 
 	router := chi.NewRouter()
@@ -40,6 +42,8 @@ func main() {
 		router.Post("/api/shorten/batch", handlers.BatchHandler)
 		router.Delete("/api/user/urls", handlers.DeleteUserURLs)
 	})
+
+	//http server launch
 	log.Fatal(http.ListenAndServe(servConf.ServerAddress, router))
 }
 
@@ -50,10 +54,10 @@ func gRPCService(ctx context.Context, db storage.Storage) {
 	}
 	rpcServer := grpc.NewServer(withServerUnaryInterceptor())
 	pb.RegisterRazorbladeServiceServer(rpcServer, &server2.RazorbladeService{DB: db, DeleteBuffer: service.NewDeleteBuffer(ctx, db)})
+
+	//gRPC server launch
 	fmt.Println("Starting a gRPC server")
-	if err = rpcServer.Serve(gRPCListener); err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(rpcServer.Serve(gRPCListener))
 }
 
 func withServerUnaryInterceptor() grpc.ServerOption {
